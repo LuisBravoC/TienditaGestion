@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { Sun, Moon, Globe, Bell, Shield, User, Palette, Info, ChevronRight, ChevronDown, Users, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Sun, Moon, Globe, Bell, Shield, User, Palette, Info, ChevronRight, ChevronDown, Users, Plus, Pencil, Trash2, Check, X, Tag } from 'lucide-react'
 import Breadcrumbs from '../components/Breadcrumbs.jsx'
 import { useBreadcrumbs } from '../lib/useBreadcrumbs.js'
 import { useAuth } from '../lib/AuthContext.jsx'
 import { useTheme } from '../lib/ThemeContext.jsx'
 import { useQuery } from '../lib/useQuery.js'
 import { useToast } from '../lib/toast.jsx'
-import * as q from '../lib/rifas-queries.js'
+import * as q  from '../lib/rifas-queries.js'
+import * as qt from '../lib/tiendita-queries.js'
 import GrupoBadge from '../components/GrupoBadge.jsx'
 import ConfirmModal from '../components/ConfirmModal.jsx'
 
@@ -43,13 +44,43 @@ export default function Opciones() {
   const { theme, setTheme } = useTheme()
   const toast = useToast()
 
-  const { data: grupos, refetch: refetchGrupos } = useQuery(() => q.getGrupos(), [])
+  const { data: grupos,     refetch: refetchGrupos }     = useQuery(() => q.getGrupos(), [])
+  const { data: categorias, refetch: refetchCategorias } = useQuery(() => qt.getCategorias(), [])
+
   const [grupoForm,    setGrupoForm]    = useState(null)
   const [grupoSaving,  setGrupoSaving]  = useState(false)
   const [grupoConfirm, setGrupoConfirm] = useState(null)
   const [gruposOpen,   setGruposOpen]   = useState(true)
 
+  const [catForm,    setCatForm]    = useState(null)
+  const [catSaving,  setCatSaving]  = useState(false)
+  const [catConfirm, setCatConfirm] = useState(null)
+  const [catsOpen,   setCatsOpen]   = useState(true)
+
   const COLORES_PRESET = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16']
+
+  async function handleCatSave() {
+    if (!catForm?.nombre?.trim()) return
+    setCatSaving(true)
+    try {
+      if (catForm.id) await qt.updateCategoria(catForm.id, { nombre: catForm.nombre.trim(), color: catForm.color })
+      else            await qt.insertCategoria({ nombre: catForm.nombre.trim(), color: catForm.color })
+      toast(catForm.id ? 'Categoría actualizada' : 'Categoría creada')
+      setCatForm(null)
+      refetchCategorias()
+    } catch { toast('Error al guardar la categoría') }
+    finally { setCatSaving(false) }
+  }
+
+  async function handleCatDelete() {
+    if (!catConfirm) return
+    try {
+      await qt.deleteCategoria(catConfirm)
+      toast('Categoría eliminada')
+      setCatConfirm(null)
+      refetchCategorias()
+    } catch { toast('No se puede eliminar: hay productos asignados a esta categoría') }
+  }
 
   async function handleGrupoSave() {
     if (!grupoForm?.nombre?.trim()) return
@@ -107,6 +138,82 @@ export default function Opciones() {
             <OptionSection icon={User}   title="Perfil"        description="Nombre, avatar y datos personales"     badge="Próximamente" />
             <OptionSection icon={Shield} title="Seguridad"     description="Contraseña y verificación en dos pasos" badge="Próximamente" />
           </OptionGroup>
+
+          {/* Categorías de producto */}
+          {isAdmin && (
+          <OptionGroup title="Categorías de producto">
+            <div style={{ padding: '.75rem 1rem .5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '.85rem', color: 'var(--text-muted)' }}>
+                Clasifica tus productos para filtrarlos fácilmente.
+              </span>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => { setCatForm({ nombre: '', color: COLORES_PRESET[0] }); setCatsOpen(true) }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', flexShrink: 0 }}
+              >
+                <Plus size={13} /> Nueva categoría
+              </button>
+            </div>
+
+            {catForm && (
+              <div style={{ padding: '.75rem 1rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-muted)' }}>
+                <p style={{ fontSize: '.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '.6rem', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                  {catForm.id ? 'Editar categoría' : 'Nueva categoría'}
+                </p>
+                <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', marginBottom: '.5rem' }}>
+                  <div style={{ width: 20, height: 20, borderRadius: '50%', background: catForm.color, flexShrink: 0, border: '2px solid var(--border)' }} />
+                  <input
+                    value={catForm.nombre}
+                    onChange={e => setCatForm(f => ({ ...f, nombre: e.target.value }))}
+                    placeholder="Nombre de la categoría"
+                    style={{ ...inputStyle, flex: 1 }}
+                    autoFocus
+                    onKeyDown={e => { if (e.key === 'Enter') handleCatSave(); if (e.key === 'Escape') setCatForm(null) }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginBottom: '.6rem', alignItems: 'center' }}>
+                  {COLORES_PRESET.map(c => (
+                    <button key={c} onClick={() => setCatForm(f => ({ ...f, color: c }))}
+                      style={{ width: 24, height: 24, borderRadius: '50%', border: '3px solid', borderColor: catForm.color === c ? 'var(--text)' : 'transparent', background: c, cursor: 'pointer', padding: 0, flexShrink: 0, boxShadow: catForm.color === c ? '0 0 0 2px var(--bg), 0 0 0 4px ' + c : 'none', transition: 'box-shadow .15s' }}
+                    />
+                  ))}
+                  <input type="color" value={catForm.color} onChange={e => setCatForm(f => ({ ...f, color: e.target.value }))} style={{ width: 24, height: 24, padding: 0, border: '2px solid var(--border)', cursor: 'pointer', borderRadius: '50%', background: 'none' }} title="Color personalizado" />
+                </div>
+                <div style={{ display: 'flex', gap: '.4rem' }}>
+                  <button className="btn btn-primary btn-sm" onClick={handleCatSave} disabled={catSaving}>
+                    <Check size={13} /> {catForm.id ? 'Guardar cambios' : 'Crear categoría'}
+                  </button>
+                  <button className="btn btn-outline btn-sm" onClick={() => setCatForm(null)}>
+                    <X size={13} /> Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {(categorias ?? []).length > 0 && (
+              <button onClick={() => setCatsOpen(o => !o)} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: '.5rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '.82rem', borderBottom: catsOpen ? '1px solid var(--border)' : 'none' }}>
+                <span>{(categorias ?? []).length} {(categorias ?? []).length === 1 ? 'categoría' : 'categorías'} registradas</span>
+                <ChevronDown size={15} style={{ transform: catsOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+              </button>
+            )}
+
+            {catsOpen && (categorias ?? []).map((c, i) => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.6rem 1rem', borderBottom: i < (categorias.length - 1) ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ width: 12, height: 12, borderRadius: '50%', background: c.color, flexShrink: 0 }} />
+                <GrupoBadge grupo={c} size="md" />
+                <div style={{ flex: 1 }} />
+                <button className="btn btn-icon" onClick={() => { setCatForm({ id: c.id, nombre: c.nombre, color: c.color }); setCatsOpen(true) }} title="Editar"><Pencil size={13} /></button>
+                <button className="btn btn-icon btn-danger-icon" onClick={() => setCatConfirm(c.id)} title="Eliminar"><Trash2 size={13} /></button>
+              </div>
+            ))}
+
+            {(categorias ?? []).length === 0 && !catForm && (
+              <div style={{ padding: '.75rem 1rem', fontSize: '.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                Sin categorías todavía. Crea la primera con el botón de arriba.
+              </div>
+            )}
+          </OptionGroup>
+          )}
 
           {/* Grupos sociales */}
           {isAdmin && (
@@ -276,14 +383,23 @@ export default function Opciones() {
             <div className="opciones-item">
               <div className="opciones-item-icon"><Info size={18} /></div>
               <div className="opciones-item-body">
-                <span className="opciones-item-label">RifaGestión</span>
-                <span className="opciones-item-desc">Versión 1.1 · Gestión de rifas y sorteos</span>
+                <span className="opciones-item-label">TienditaGestion</span>
+                <span className="opciones-item-desc">Versión 2.0 · Inventario, ventas y rifas</span>
               </div>
             </div>
           </OptionGroup>
 
         </div>
       </div>
+
+      {catConfirm && (
+        <ConfirmModal
+          title="Eliminar categoría"
+          message="¿Seguro? Los productos asignados a esta categoría quedarán sin categoría."
+          onConfirm={handleCatDelete}
+          onCancel={() => setCatConfirm(null)}
+        />
+      )}
 
       {grupoConfirm && (
         <ConfirmModal

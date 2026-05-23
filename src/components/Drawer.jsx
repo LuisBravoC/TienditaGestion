@@ -7,7 +7,7 @@ import { X } from 'lucide-react'
  *     <div className="field">...</div>
  *   </Drawer>
  */
-export default function Drawer({ title, onClose, onSave, saving = false, children }) {
+export default function Drawer({ title, onClose, onSave, saving = false, saveLabel, children }) {
   return (
     <>
       <div className="drawer-overlay" onClick={onClose} />
@@ -28,7 +28,7 @@ export default function Drawer({ title, onClose, onSave, saving = false, childre
             Cancelar
           </button>
           <button className="btn btn-primary" onClick={onSave} disabled={saving}>
-            {saving ? 'Guardando…' : 'Guardar'}
+            {saving ? 'Guardando…' : (saveLabel ?? 'Guardar')}
           </button>
         </div>
       </div>
