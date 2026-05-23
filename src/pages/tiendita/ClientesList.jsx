@@ -26,46 +26,65 @@ function ventasStats(c) {
   return { count, total }
 }
 
+const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f97316','#14b8a6','#3b82f6','#10b981','#f59e0b']
+const avatarColor = name => AVATAR_COLORS[(name ?? '?').charCodeAt(0) % AVATAR_COLORS.length]
+
 function ClienteCard({ cliente, onEdit, onDelete, onClick }) {
-  const stats = ventasStats(cliente)
+  const stats   = ventasStats(cliente)
+  const inicial = (cliente.nombre_completo ?? '?')[0].toUpperCase()
+
   return (
-    <div className="card" onClick={onClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '.5rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '.95rem', lineHeight: 1.3 }}>{cliente.nombre_completo}</span>
-        {stats.count > 0 && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', padding: '.15rem .45rem', borderRadius: '999px', fontSize: '.7rem', fontWeight: 700, background: 'var(--accent-light)', color: 'var(--accent)', flexShrink: 0 }}>
-            <ShoppingBag size={10} /> {stats.count}
-          </span>
-        )}
+    <div className="card" onClick={onClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', gap: 0 }}>
+      {/* Cuerpo */}
+      <div style={{ padding: '1rem', display: 'flex', gap: '.85rem', alignItems: 'flex-start' }}>
+        {/* Avatar */}
+        <div style={{ width: 40, height: 40, borderRadius: '50%', background: avatarColor(cliente.nombre_completo), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#fff', flexShrink: 0 }}>
+          {inicial}
+        </div>
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
+          <div style={{ fontWeight: 700, fontSize: '.95rem', lineHeight: 1.3 }}>
+            {cliente.nombre_completo}
+          </div>
+          {cliente.telefono_whatsapp && (
+            <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.35rem' }}>
+              <Phone size={12} style={{ flexShrink: 0 }} />{cliente.telefono_whatsapp}
+            </div>
+          )}
+          {cliente.email && (
+            <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.35rem', overflow: 'hidden' }}>
+              <Mail size={12} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cliente.email}</span>
+            </div>
+          )}
+          {cliente.direccion && (
+            <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'flex-start', gap: '.35rem' }}>
+              <MapPin size={12} style={{ flexShrink: 0, marginTop: '.1rem' }} />
+              <span style={{ lineHeight: 1.4 }}>{cliente.direccion}</span>
+            </div>
+          )}
+        </div>
       </div>
-      {cliente.telefono_whatsapp && (
-        <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.3rem' }}>
-          <Phone size={11} /> {cliente.telefono_whatsapp}
-        </div>
-      )}
-      {cliente.email && (
-        <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.3rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          <Mail size={11} /> {cliente.email}
-        </div>
-      )}
-      {cliente.direccion && (
-        <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.3rem' }}>
-          <MapPin size={11} /> {cliente.direccion}
-        </div>
-      )}
-      {stats.count > 0 && (
-        <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginTop: '.1rem' }}>
-          Total compras: <strong style={{ color: 'var(--text)' }}>{fmt(stats.total)}</strong>
-        </div>
-      )}
-      {(onEdit || onDelete) && (
-        <div style={{ display: 'flex', gap: '.35rem', marginTop: '.25rem' }}>
-          {onEdit  && <button className="btn btn-icon" onClick={e => { e.stopPropagation(); onEdit(cliente, e) }} title="Editar"><Pencil size={13} /></button>}
-          {onDelete && <button className="btn btn-icon btn-danger-icon" onClick={e => { e.stopPropagation(); onDelete(cliente.id) }} title="Eliminar"><Trash2 size={13} /></button>}
-          <div style={{ flex: 1 }} />
-          <ArrowRight size={15} style={{ color: 'var(--text-muted)', alignSelf: 'center' }} />
-        </div>
-      )}
+
+      {/* Footer: stats + acciones */}
+      <div style={{ borderTop: '1px solid var(--border)', padding: '.6rem 1rem', display: 'flex', alignItems: 'center', gap: '.6rem', background: 'var(--bg-muted)' }}>
+        {stats.count > 0 ? (
+          <>
+            <ShoppingBag size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+            <span style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>
+              <strong style={{ color: 'var(--text)' }}>{stats.count}</strong> venta{stats.count !== 1 ? 's' : ''}
+            </span>
+            <span style={{ opacity: .35, fontSize: '.8rem' }}>·</span>
+            <span style={{ fontSize: '.8rem', fontWeight: 700, color: 'var(--liquidado)' }}>{fmt(stats.total)}</span>
+          </>
+        ) : (
+          <span style={{ fontSize: '.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin compras</span>
+        )}
+        <div style={{ flex: 1 }} />
+        {onEdit   && <button className="btn btn-icon" onClick={e => { e.stopPropagation(); onEdit(cliente, e) }}   title="Editar"><Pencil size={13} /></button>}
+        {onDelete && <button className="btn btn-icon btn-danger-icon" onClick={e => { e.stopPropagation(); onDelete(cliente.id) }} title="Eliminar"><Trash2 size={13} /></button>}
+        <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
+      </div>
     </div>
   )
 }

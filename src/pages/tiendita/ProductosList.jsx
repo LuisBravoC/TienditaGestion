@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Package, ArrowRight, Pencil, Trash2, Plus, LayoutGrid, List as ListIcon, AlertTriangle } from 'lucide-react'
+import { Package, ArrowRight, Pencil, Trash2, Plus, LayoutGrid, List as ListIcon, AlertTriangle, PackageX } from 'lucide-react'
 import { useQuery } from '../../lib/useQuery.js'
 import { useToast } from '../../lib/toast.jsx'
 import { fmt } from '../../lib/formatters.js'
@@ -16,6 +16,7 @@ import { parseError } from '../../lib/parseError.js'
 import GrupoBadge from '../../components/GrupoBadge.jsx'
 
 const EMPTY = { nombre: '', descripcion: '', precio_venta: '', precio_costo: '', categoria_id: '', url_compra_original: '', notas: '' }
+const SI_EMPTY = { activo: false, cantidad: '', notas: '' }
 
 const selectStyle = {
   height: '2.2rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
@@ -23,13 +24,23 @@ const selectStyle = {
   fontSize: '.875rem', flexShrink: 0,
 }
 
+function PriceCol({ label, value, color = 'var(--text)' }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '.1rem' }}>
+      <span style={{ fontSize: '.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.04em', fontWeight: 600 }}>{label}</span>
+      <span style={{ fontWeight: 700, fontSize: '.88rem', color }}>{value}</span>
+    </div>
+  )
+}
+
 function StockBadge({ stock }) {
   const n = Number(stock ?? 0)
   const color = n <= 0 ? '#ef4444' : n <= 2 ? '#f59e0b' : '#10b981'
   const label = n <= 0 ? 'Agotado' : `${n} uds`
+  const icon  = n <= 0 ? <PackageX size={12} /> : n <= 2 ? <AlertTriangle size={12} /> : null
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', padding: '.15rem .5rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: color + '22', color, flexShrink: 0 }}>
-      {n > 0 && n <= 2 && <AlertTriangle size={10} />}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', padding: '.2rem .6rem', borderRadius: '999px', fontSize: '.8rem', fontWeight: 700, background: color + '33', color, flexShrink: 0 }}>
+      {icon}
       {label}
     </span>
   )
@@ -50,17 +61,20 @@ export default function ProductosList() {
   const [viewMode,    setViewMode]    = useState('cards')
   const [drawer,    setDrawer]    = useState(null)
   const [form,      setForm]      = useState(EMPTY)
+  const [si,        setSiState]   = useState(SI_EMPTY)   // stock inicial
   const [saving,    setSaving]    = useState(false)
   const [confirm,   setConfirm]   = useState(null)
   const [errModal,  setErrModal]  = useState(null)
 
   const showErr = e => setErrModal(typeof e === 'string' ? { title: 'Aviso', body: e } : (e?.title ? e : parseError(e)))
   const set  = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const setSi = (k, v) => setSiState(s => ({ ...s, [k]: v }))
   const done = msg  => { refetch(); setDrawer(null); if (msg) toast(msg) }
 
-  function openCreate() { setForm(EMPTY); setDrawer({ mode: 'create' }) }
+  function openCreate() { setForm(EMPTY); setSiState(SI_EMPTY); setDrawer({ mode: 'create' }) }
   function openEdit(p, e) {
     e.stopPropagation()
+    setSiState(SI_EMPTY)
     setForm({
       nombre:              p.nombre,
       descripcion:         p.descripcion          ?? '',
@@ -77,6 +91,10 @@ export default function ProductosList() {
     if (!form.nombre.trim()) { showErr('El nombre del producto es obligatorio.'); return }
     const precio_venta = parseFloat(form.precio_venta)
     if (isNaN(precio_venta) || precio_venta < 0) { showErr('El precio de venta debe ser un número válido.'); return }
+    if (drawer.mode === 'create' && si.activo) {
+      const cant = parseInt(si.cantidad)
+      if (!si.cantidad || isNaN(cant) || cant <= 0) { showErr('La cantidad de stock inicial debe ser un número mayor a 0.'); return }
+    }
     setSaving(true)
     try {
       const payload = {
@@ -88,9 +106,21 @@ export default function ProductosList() {
         url_compra_original: form.url_compra_original.trim() || null,
         notas:               form.notas.trim()               || null,
       }
-      if (drawer.mode === 'create') await q.insertProducto(payload)
-      else                          await q.updateProducto(drawer.record.id, payload)
-      done(drawer.mode === 'create' ? 'Producto registrado' : 'Producto actualizado')
+      if (drawer.mode === 'create') {
+        const nuevo = await q.insertProducto(payload)
+        if (si.activo) {
+          await q.insertAjusteStock({
+            producto_id: nuevo.id,
+            cantidad:    parseInt(si.cantidad),
+            motivo:      'correccion',
+            notas:       si.notas.trim() || 'Stock inicial',
+          })
+        }
+        done(si.activo ? 'Producto registrado con stock inicial' : 'Producto registrado')
+      } else {
+        await q.updateProducto(drawer.record.id, payload)
+        done('Producto actualizado')
+      }
     } catch (e) { showErr(e) }
     finally { setSaving(false) }
   }
@@ -171,25 +201,47 @@ export default function ProductosList() {
                 onClick={() => navigate(`/productos/${p.id}`)}
                 style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '.5rem' }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '.5rem' }}>
-                  <span style={{ fontWeight: 700, fontSize: '.95rem', lineHeight: 1.3, flex: 1 }}>{p.nombre}</span>
+                {/* Header: categoría + stock */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.4rem', minHeight: '1.5rem' }}>
+                  {p.categoria_nombre
+                    ? <GrupoBadge grupo={{ nombre: p.categoria_nombre, color: p.categoria_color }} />
+                    : <span />}
                   <StockBadge stock={p.stock_actual} />
                 </div>
-                {p.categoria_nombre && (
-                  <GrupoBadge grupo={{ nombre: p.categoria_nombre, color: p.categoria_color }} />
-                )}
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '.82rem', color: 'var(--text-muted)' }}>
-                  <span>Venta <strong style={{ color: 'var(--text)' }}>{fmt(p.precio_venta)}</strong></span>
-                  {p.precio_costo != null && <span>Costo <strong>{fmt(p.precio_costo)}</strong></span>}
+
+                {/* Nombre */}
+                <div style={{ fontWeight: 700, fontSize: '.95rem', lineHeight: 1.35 }}>{p.nombre}</div>
+
+                {/* Precios */}
+                {(() => {
+                  const hasCosto = p.precio_costo != null
+                  const margen   = hasCosto && p.precio_venta > 0
+                    ? Math.round(((p.precio_venta - p.precio_costo) / p.precio_venta) * 100)
+                    : null
+                  return (
+                    <div style={{ display: 'grid', gridTemplateColumns: hasCosto ? '1fr 1fr 1fr' : '1fr', gap: '.25rem', borderTop: '1px solid var(--border)', paddingTop: '.55rem', marginTop: '.1rem' }}>
+                      <PriceCol label="Precio venta" value={fmt(p.precio_venta)} />
+                      {hasCosto && <PriceCol label="Costo" value={fmt(p.precio_costo)} />}
+                      {hasCosto && (
+                        margen != null
+                          ? <PriceCol label="Margen" value={`${margen}%`} color={margen >= 0 ? 'var(--liquidado)' : 'var(--deuda)'} />
+                          : <PriceCol label="Margen" value="—" />
+                      )}
+                    </div>
+                  )
+                })()}
+
+                {/* Acciones */}
+                <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center', marginTop: '.1rem' }}>
+                  {isAdmin && (
+                    <>
+                      <button className="btn btn-icon" onClick={e => openEdit(p, e)} title="Editar"><Pencil size={13} /></button>
+                      <button className="btn btn-icon btn-danger-icon" onClick={e => { e.stopPropagation(); setConfirm(p.id) }} title="Eliminar"><Trash2 size={13} /></button>
+                    </>
+                  )}
+                  <div style={{ flex: 1 }} />
+                  <ArrowRight size={15} style={{ color: 'var(--text-muted)' }} />
                 </div>
-                {isAdmin && (
-                  <div style={{ display: 'flex', gap: '.35rem', marginTop: '.1rem' }}>
-                    <button className="btn btn-icon" onClick={e => openEdit(p, e)} title="Editar"><Pencil size={13} /></button>
-                    <button className="btn btn-icon btn-danger-icon" onClick={e => { e.stopPropagation(); setConfirm(p.id) }} title="Eliminar"><Trash2 size={13} /></button>
-                    <div style={{ flex: 1 }} />
-                    <ArrowRight size={15} style={{ color: 'var(--text-muted)', alignSelf: 'center' }} />
-                  </div>
-                )}
               </div>
             ))}
             {list.length === 0 && (
@@ -270,6 +322,43 @@ export default function ProductosList() {
               <label>Notas internas</label>
               <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Notas visibles solo para ti" />
             </div>
+
+            {/* Stock inicial — solo al crear */}
+            {drawer.mode === 'create' && (
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '.75rem', marginTop: '.1rem' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '.55rem', cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={si.activo}
+                    onChange={e => setSi('activo', e.target.checked)}
+                    style={{ width: 'auto', accentColor: 'var(--accent)', flexShrink: 0 }}
+                  />
+                  <span style={{ fontWeight: 600, fontSize: '.875rem' }}>Añadir stock inicial</span>
+                </label>
+                {si.activo && (
+                  <div style={{ marginTop: '.65rem', display: 'flex', flexDirection: 'column', gap: '.6rem', padding: '.75rem', background: 'var(--bg-muted)', borderRadius: 'var(--radius)' }}>
+                    <div className="field" style={{ margin: 0 }}>
+                      <label>Cantidad *</label>
+                      <input
+                        type="number" min="1" step="1"
+                        value={si.cantidad}
+                        onChange={e => setSi('cantidad', e.target.value)}
+                        placeholder="ej. 10"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="field" style={{ margin: 0 }}>
+                      <label>Notas del ajuste</label>
+                      <input
+                        value={si.notas}
+                        onChange={e => setSi('notas', e.target.value)}
+                        placeholder="Stock inicial (por defecto)"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </Drawer>
         )}
 
@@ -281,7 +370,7 @@ export default function ProductosList() {
             onCancel={() => setConfirm(null)}
           />
         )}
-        {errModal && <ErrorModal title={errModal.title} message={errModal.body} onClose={() => setErrModal(null)} />}
+        {errModal && <ErrorModal title={errModal.title} body={errModal.body} onClose={() => setErrModal(null)} />}
       </div>
     </>
   )
