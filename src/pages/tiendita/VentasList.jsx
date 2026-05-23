@@ -720,7 +720,7 @@ export default function VentasList() {
           />
         )}
 
-        {errModal && <ErrorModal title={errModal.title} message={errModal.body} onClose={() => setErrModal(null)} />}
+        {errModal && <ErrorModal title={errModal.title} body={errModal.body} onClose={() => setErrModal(null)} />}
       </div>
     </>
   )
