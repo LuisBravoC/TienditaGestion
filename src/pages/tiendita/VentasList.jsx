@@ -240,19 +240,23 @@ export default function VentasList() {
     if (!monto || monto <= 0) { showErr('El monto debe ser mayor a 0.'); return }
     setAbonoSaving(true)
     try {
-      await q.insertAbono({
-        venta_id:    abonoVenta.id,
+      const ventaId = abonoVenta.id
+      const newAbono = await q.insertAbono({
+        venta_id:    ventaId,
         monto,
         fecha:       abonoForm.fecha,
         metodo_pago: abonoForm.metodo_pago,
         notas:       abonoForm.notas.trim() || null,
       })
       toast('Abono registrado')
-      const ventaId = abonoVenta.id
+      // Inyectar el nuevo abono directo en el cache sin borrar los anteriores
+      setExpandedData(d => d[ventaId]
+        ? { ...d, [ventaId]: { ...d[ventaId], abonos: [newAbono, ...(d[ventaId].abonos ?? [])] } }
+        : d
+      )
       setAbonoVenta(null)
       setAbonoForm({ monto: '', fecha: today(), metodo_pago: 'Efectivo', notas: '' })
-      setExpandedData(d => { const n = { ...d }; delete n[ventaId]; return n })
-      refetch()
+      refetch()  // actualiza saldo_pendiente en la cabecera
     } catch (e) { showErr(e) }
     finally { setAbonoSaving(false) }
   }

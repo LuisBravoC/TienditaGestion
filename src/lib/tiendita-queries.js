@@ -384,6 +384,17 @@ export async function getClientes() {
   )
 }
 
+/** Lista de clientes con conteo y total de ventas — para la página de Clientes */
+export async function getClientesConResumen() {
+  return check(
+    await supabase
+      .from('participantes')
+      .select('id, nombre_completo, telefono_whatsapp, email, direccion, notas, grupo_id, created_at, ventas(id, precio_total)')
+      .order('nombre_completo'),
+    'getClientesConResumen'
+  )
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // DASHBOARD — métricas de resumen para la pantalla de inicio
 // ════════════════════════════════════════════════════════════════════════════════
