@@ -213,6 +213,25 @@ export async function updatePedido(id, payload) {
   )
 }
 
+export async function updatePedidoConItems(id, pedidoPayload, items) {
+  check(
+    await supabase.from('pedidos_compra').update(pedidoPayload).eq('id', id),
+    'updatePedidoConItems:header'
+  )
+  check(
+    await supabase.from('pedido_items').delete().eq('pedido_id', id),
+    'updatePedidoConItems:delete'
+  )
+  if (items?.length) {
+    check(
+      await supabase.from('pedido_items').insert(
+        items.map(i => ({ ...i, pedido_id: id }))
+      ),
+      'updatePedidoConItems:items'
+    )
+  }
+}
+
 export async function deletePedido(id) {
   return check(
     await supabase.from('pedidos_compra').delete().eq('id', id),
