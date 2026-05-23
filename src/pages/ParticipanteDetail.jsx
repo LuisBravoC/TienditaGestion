@@ -3,13 +3,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   Users, Phone, Mail, Pencil, Trash2, CheckCircle2,
   Clock, AlertCircle, Trophy, Calendar, ArrowRight, ExternalLink, DollarSign,
-  CreditCard,
+  CreditCard, ShoppingBag, MapPin, CheckCircle, Banknote, Smartphone,
+  ChevronDown, Package,
 } from 'lucide-react'
 import { useQuery } from '../lib/useQuery.js'
 import { useToast } from '../lib/toast.jsx'
 import { fmt, fmtNum, fmtDate, today } from '../lib/formatters.js'
 import { supabase } from '../lib/supabase.js'
-import * as q from '../lib/rifas-queries.js'
+import * as q  from '../lib/rifas-queries.js'
+import * as qt from '../lib/tiendita-queries.js'
 import Breadcrumbs from '../components/Breadcrumbs.jsx'
 import { useBreadcrumbs } from '../lib/useBreadcrumbs.js'
 import { useAuth } from '../lib/AuthContext.jsx'
@@ -36,6 +38,8 @@ export default function ParticipanteDetail() {
   )
 
   const { data: grupos } = useQuery(() => q.getGrupos(), [])
+  const [tab, setTab] = useState('compras')
+  const { data: ventas, loading: ventasLoading } = useQuery(() => qt.getVentasDeCliente(partId), [partId])
   const [drawerEdit, setDrawerEdit] = useState(false)
   const [form,       setForm]       = useState({})
   const [saving,     setSaving]     = useState(false)
@@ -53,7 +57,7 @@ export default function ParticipanteDetail() {
 
   function openEdit() {
     const p = data.participante
-    setForm({ nombre_completo: p.nombre_completo, telefono_whatsapp: p.telefono_whatsapp ?? '', email: p.email ?? '', grupo_id: p.grupo_id ?? '' })
+    setForm({ nombre_completo: p.nombre_completo, telefono_whatsapp: p.telefono_whatsapp ?? '', email: p.email ?? '', grupo_id: p.grupo_id ?? '', direccion: p.direccion ?? '', notas: p.notas ?? '' })
     setDrawerEdit(true)
   }
 
@@ -181,6 +185,11 @@ export default function ParticipanteDetail() {
                     <Mail size={13} /> {p.email}
                   </span>
                 )}
+                {p.direccion && (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
+                    <MapPin size={13} /> {p.direccion}
+                  </span>
+                )}
               </div>
             </div>
             {isAdmin && (
@@ -200,54 +209,127 @@ export default function ParticipanteDetail() {
           </div>
         </div>
 
-        {/* ── Resumen global de pagos ── */}
-        {globalStats.total > 0 && (
-          <div className="part-stats-grid" style={{ marginBottom: '1.5rem' }}>
-            <div className="card stat-card">
-              <div className="stat-value" style={{ color: 'var(--accent-light)' }}>{globalStats.total}</div>
-              <div className="stat-label">Boletos totales</div>
-            </div>
-            <div className="card stat-card">
-              <div className="stat-value" style={{ color: 'var(--liquidado)' }}>{globalStats.liquidados}</div>
-              <div className="stat-label">Pagados</div>
-            </div>
-            <div className="card stat-card">
-              <div className="stat-value cobrado">{fmt(globalStats.pagado)}</div>
-              <div className="stat-label">Total pagado</div>
-            </div>
-            {globalStats.pendiente > 0 && (
-              <div className="card stat-card">
-                <div className="stat-value por-cobrar">{fmt(globalStats.pendiente)}</div>
-                <div className="stat-label">Saldo pendiente</div>
+        {/* ── Pestañas ── */}
+        <div style={{ display: 'flex', gap: '.35rem', marginBottom: '1.25rem' }}>
+          {[
+            { id: 'compras', icon: ShoppingBag, label: 'Compras', count: (ventas ?? []).length },
+            { id: 'rifas',   icon: Trophy,      label: 'Rifas',   count: rifas.length },
+          ].map(t => (
+            <button
+              key={t.id}
+              className={`btn btn-sm ${tab === t.id ? 'btn-primary' : 'btn-outline'}`}
+              onClick={() => setTab(t.id)}
+              style={{ display: 'flex', alignItems: 'center', gap: '.35rem' }}
+            >
+              <t.icon size={13} />
+              {t.label}
+              {t.count > 0 && (
+                <span style={{ background: tab === t.id ? 'rgba(255,255,255,.25)' : 'var(--accent-light)', color: tab === t.id ? '#fff' : 'var(--accent)', borderRadius: '999px', padding: '.05rem .4rem', fontSize: '.7rem', fontWeight: 700 }}>
+                  {t.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab: Rifas ── */}
+        {tab === 'rifas' && (
+          <>
+            {globalStats.total > 0 && (
+              <div className="part-stats-grid" style={{ marginBottom: '1.5rem' }}>
+                <div className="card stat-card">
+                  <div className="stat-value" style={{ color: 'var(--accent-light)' }}>{globalStats.total}</div>
+                  <div className="stat-label">Boletos totales</div>
+                </div>
+                <div className="card stat-card">
+                  <div className="stat-value" style={{ color: 'var(--liquidado)' }}>{globalStats.liquidados}</div>
+                  <div className="stat-label">Pagados</div>
+                </div>
+                <div className="card stat-card">
+                  <div className="stat-value cobrado">{fmt(globalStats.pagado)}</div>
+                  <div className="stat-label">Total pagado</div>
+                </div>
+                {globalStats.pendiente > 0 && (
+                  <div className="card stat-card">
+                    <div className="stat-value por-cobrar">{fmt(globalStats.pendiente)}</div>
+                    <div className="stat-label">Saldo pendiente</div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+            {rifas.length === 0 ? (
+              <div className="empty">
+                <Trophy size={40} style={{ opacity: .25 }} />
+                <p style={{ marginTop: '.75rem' }}>Este participante no tiene boletos activos.</p>
+              </div>
+            ) : (
+              <>
+                <p className="section-heading">
+                  Boletos por sorteo ({rifas.length} {rifas.length === 1 ? 'rifa' : 'rifas'})
+                </p>
+                {rifas.map(rifa => (
+                  <RifaSection
+                    key={rifa.rifa_id}
+                    rifa={rifa}
+                    isAdmin={isAdmin}
+                    onPagar={b => {
+                      setFormPago({ monto: '', fecha: today(), metodo_pago: 'Efectivo' })
+                      setDrawerPago({ boleto: b })
+                    }}
+                    onLiquidar={b => setConfirmLiq({ boleto: b })}
+                  />
+                ))}
+              </>
+            )}
+          </>
         )}
 
-        {/* ── Boletos por rifa ── */}
-        {rifas.length === 0 ? (
-          <div className="empty">
-            <Trophy size={40} style={{ opacity: .25 }} />
-            <p style={{ marginTop: '.75rem' }}>Este participante no tiene boletos activos.</p>
+        {/* ── Tab: Compras y Apartados ── */}
+        {tab === 'compras' && (
+          <div>
+            {ventasLoading ? (
+              <LoadingSpinner text="Cargando compras…" />
+            ) : (ventas ?? []).length === 0 ? (
+              <div className="empty">
+                <ShoppingBag size={40} style={{ opacity: .25 }} />
+                <p style={{ marginTop: '.75rem' }}>Sin compras ni apartados registrados.</p>
+              </div>
+            ) : (() => {
+              const totalComprado  = ventas.reduce((s, v) => s + Number(v.precio_total ?? 0), 0)
+              const totalPendiente = ventas.reduce((s, v) => s + Number(v.saldo_pendiente ?? 0), 0)
+              const totalPagado    = totalComprado - totalPendiente
+              const apartados      = ventas.filter(v => v.tipo === 'apartado').length
+              return (
+                <>
+                  {/* Resumen */}
+                  <div className="part-stats-grid" style={{ marginBottom: '1.25rem' }}>
+                    <div className="card stat-card">
+                      <div className="stat-value" style={{ color: 'var(--accent-light)' }}>{ventas.length}</div>
+                      <div className="stat-label">Compra{ventas.length !== 1 ? 's' : ''}</div>
+                    </div>
+                    <div className="card stat-card">
+                      <div className="stat-value cobrado">{fmt(totalComprado)}</div>
+                      <div className="stat-label">Total comprado</div>
+                    </div>
+                    <div className="card stat-card">
+                      <div className="stat-value" style={{ color: 'var(--liquidado)' }}>{fmt(totalPagado)}</div>
+                      <div className="stat-label">Total pagado</div>
+                    </div>
+                    {totalPendiente > 0 && (
+                      <div className="card stat-card">
+                        <div className="stat-value por-cobrar">{fmt(totalPendiente)}</div>
+                        <div className="stat-label">Saldo pendiente</div>
+                      </div>
+                    )}
+                  </div>
+                  {/* Lista */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+                    {ventas.map(v => <VentaCompraRow key={v.id} venta={v} />)}
+                  </div>
+                </>
+              )
+            })()}
           </div>
-        ) : (
-          <>
-            <p className="section-heading">
-              Boletos por sorteo ({rifas.length} {rifas.length === 1 ? 'rifa' : 'rifas'})
-            </p>
-            {rifas.map(rifa => (
-              <RifaSection
-                key={rifa.rifa_id}
-                rifa={rifa}
-                isAdmin={isAdmin}
-                onPagar={b => {
-                  setFormPago({ monto: '', fecha: today(), metodo_pago: 'Efectivo' })
-                  setDrawerPago({ boleto: b })
-                }}
-                onLiquidar={b => setConfirmLiq({ boleto: b })}
-              />
-            ))}
-          </>
         )}
       </div>
 
@@ -278,6 +360,14 @@ export default function ParticipanteDetail() {
               <option value="">Sin grupo</option>
               {(grupos ?? []).map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
             </select>
+          </div>
+          <div className="field">
+            <label>Dirección</label>
+            <input value={form.direccion ?? ''} onChange={e => set('direccion', e.target.value)} placeholder="Colonia, calle, número…" />
+          </div>
+          <div className="field">
+            <label>Notas</label>
+            <textarea rows={2} value={form.notas ?? ''} onChange={e => set('notas', e.target.value)} placeholder="Notas internas del contacto" />
           </div>
         </Drawer>
       )}
@@ -356,6 +446,174 @@ export default function ParticipanteDetail() {
 
       {errModal && <ErrorModal {...errModal} onClose={() => setErrModal(null)} />}
     </>
+  )
+}
+
+// ── Fila de venta/compra (tab Compras) ──────────────────────────────────────────
+
+const METODO_CFG = {
+  'Efectivo':      { Icon: Banknote,   color: '#10b981' },
+  'Transferencia': { Icon: Smartphone, color: '#3b82f6' },
+  'Tarjeta':       { Icon: CreditCard, color: '#8b5cf6' },
+}
+
+function VentaCompraRow({ venta: v }) {
+  const [open, setOpen] = useState(false)
+  const [exp,  setExp]  = useState(null)  // null | { items, abonos, loading }
+
+  const saldo      = Number(v.saldo_pendiente ?? 0)
+  const total      = Number(v.precio_total    ?? 0)
+  const pagado     = total - saldo
+  const pct        = total > 0 ? Math.min(100, Math.round((pagado / total) * 100)) : 100
+  const esApartado = v.tipo === 'apartado'
+
+  const tipoCfg   = esApartado
+    ? { color: '#8b5cf6', bg: '#8b5cf622', label: 'Apartado' }
+    : { color: 'var(--accent)', bg: 'var(--accent-light)', label: 'Directa' }
+  const entCfg    = v.estado_entrega === 'entregado'
+    ? { color: '#10b981', bg: '#10b98122', label: 'Entregado', Icon: CheckCircle }
+    : { color: '#f59e0b', bg: '#f59e0b22', label: 'Pendiente', Icon: Clock }
+  const metodoCfg = METODO_CFG[v.metodo_pago] ?? { Icon: DollarSign, color: 'var(--text-muted)' }
+
+  async function toggle() {
+    const next = !open
+    setOpen(next)
+    if (next && !exp) {
+      setExp({ items: [], abonos: [], loading: true })
+      try {
+        const [items, abonos] = await Promise.all([
+          qt.getItemsDeVenta(v.id),
+          esApartado ? qt.getAbonosDeVenta(v.id) : Promise.resolve([]),
+        ])
+        setExp({ items: items ?? [], abonos: abonos ?? [], loading: false })
+      } catch (e) {
+        setExp({ items: [], abonos: [], loading: false })
+      }
+    }
+  }
+
+  return (
+    <div className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+      {/* Fila 1: tipo + fecha + total */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+        <span style={{ padding: '.12rem .5rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: tipoCfg.bg, color: tipoCfg.color, flexShrink: 0 }}>
+          {tipoCfg.label}
+        </span>
+        <span style={{ flex: 1, fontSize: '.83rem', color: 'var(--text-muted)' }}>{fmtDate(v.fecha_venta)}</span>
+        <strong style={{ fontSize: '1rem', color: saldo > 0 ? 'var(--text)' : 'var(--liquidado)' }}>{fmt(total)}</strong>
+      </div>
+
+      {/* Barra de progreso para apartados */}
+      {esApartado && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.25rem' }}>
+          <div style={{ background: 'var(--border)', borderRadius: '999px', height: 5, overflow: 'hidden' }}>
+            <div style={{ width: `${pct}%`, height: '100%', background: saldo > 0 ? '#f59e0b' : '#10b981', borderRadius: '999px', transition: 'width .3s' }} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '.74rem', color: 'var(--text-muted)' }}>
+            <span>Pagado: <strong style={{ color: 'var(--liquidado)' }}>{fmt(pagado)}</strong></span>
+            {saldo > 0
+              ? <span style={{ color: 'var(--deuda)' }}>Pendiente: <strong>{fmt(saldo)}</strong></span>
+              : <span style={{ color: '#10b981', fontWeight: 700 }}>Liquidado ✓</span>
+            }
+          </div>
+        </div>
+      )}
+
+      {/* Fila 3: entrega + método */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', padding: '.1rem .45rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: entCfg.bg, color: entCfg.color }}>
+          <entCfg.Icon size={10} /> {entCfg.label}
+        </span>
+        {v.metodo_pago && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', fontSize: '.78rem', color: metodoCfg.color }}>
+            <metodoCfg.Icon size={12} /> {v.metodo_pago}
+          </span>
+        )}
+        {v.notas && (
+          <span style={{ fontSize: '.75rem', color: 'var(--text-muted)', fontStyle: 'italic', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {v.notas}
+          </span>
+        )}
+      </div>
+
+      {/* Toggle de productos */}
+      <button
+        onClick={toggle}
+        style={{
+          background: open ? 'var(--accent-light)' : 'var(--bg-muted)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '.4rem',
+          fontSize: '.78rem',
+          fontWeight: 600,
+          color: open ? 'var(--accent)' : 'var(--text-muted)',
+          padding: '.35rem .65rem',
+          width: '100%',
+          transition: 'background .15s, color .15s',
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '.35rem' }}>
+          <Package size={12} />
+          {open ? 'Ocultar productos' : 'Ver productos'}
+          {exp && !exp.loading && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>({exp.items.length})</span>}
+        </span>
+        <ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }} />
+      </button>
+
+      {/* Sección expandida */}
+      {open && (
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: '.5rem', display: 'flex', flexDirection: 'column', gap: 0 }}>
+          {exp?.loading ? (
+            <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.25rem 0' }}>Cargando…</div>
+          ) : (
+            <>
+              {/* Items del pedido */}
+              {(exp?.items ?? []).length === 0 ? (
+                <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.25rem 0' }}>Sin productos registrados.</div>
+              ) : (exp?.items ?? []).map((item, i) => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '.6rem', padding: '.35rem 0', borderBottom: i < exp.items.length - 1 ? '1px solid var(--border)' : 'none', fontSize: '.83rem' }}>
+                  <Package size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                  <span style={{ flex: 1 }}>{item.productos?.nombre ?? 'Producto eliminado'}</span>
+                  <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>×{item.cantidad}</span>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '.78rem', flexShrink: 0 }}>{fmt(item.precio_unitario_acordado)}/u</span>
+                  <span style={{ fontWeight: 700, flexShrink: 0 }}>{fmt(item.precio_unitario_acordado * item.cantidad)}</span>
+                </div>
+              ))}
+
+              {/* Historial de pagos para apartados */}
+              {esApartado && (
+                <div style={{ marginTop: '.5rem', paddingTop: '.5rem', borderTop: '1px solid var(--border)', background: 'var(--bg-muted)', borderRadius: 'var(--radius)', padding: '.6rem .75rem' }}>
+                  <div style={{ fontSize: '.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>Historial de pagos</div>
+                  {Number(v.anticipo_pagado) > 0 && (
+                    <div style={{ display: 'flex', gap: '.5rem', fontSize: '.8rem', padding: '.2rem 0' }}>
+                      <span style={{ flex: 1, color: 'var(--text-muted)' }}>Anticipo · {fmtDate(v.fecha_venta)}</span>
+                      <span style={{ fontWeight: 700, color: '#10b981' }}>+{fmt(v.anticipo_pagado)}</span>
+                    </div>
+                  )}
+                  {(exp?.abonos ?? []).map(a => (
+                    <div key={a.id} style={{ display: 'flex', gap: '.5rem', fontSize: '.8rem', padding: '.2rem 0', borderTop: '1px solid var(--border)' }}>
+                      <span style={{ flex: 1, color: 'var(--text-muted)' }}>{a.metodo_pago} · {fmtDate(a.fecha)}{a.notas ? ` · ${a.notas}` : ''}</span>
+                      <span style={{ fontWeight: 700, color: '#10b981' }}>+{fmt(a.monto)}</span>
+                    </div>
+                  ))}
+                  {!(exp?.abonos ?? []).length && !Number(v.anticipo_pagado) && (
+                    <div style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>Sin pagos registrados aún.</div>
+                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '.35rem', marginTop: '.2rem', fontSize: '.8rem', fontWeight: 700 }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Saldo pendiente</span>
+                    <span style={{ color: saldo > 0 ? '#f59e0b' : '#10b981' }}>{fmt(saldo)}</span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 

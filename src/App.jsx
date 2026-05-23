@@ -11,8 +11,9 @@ import TienditaDashboard from './pages/tiendita/TienditaDashboard.jsx'
 import ProductosList from './pages/tiendita/ProductosList.jsx'
 import ProductoDetail from './pages/tiendita/ProductoDetail.jsx'
 import PedidosList from './pages/tiendita/PedidosList.jsx'
-import VentasList from './pages/tiendita/VentasList.jsx'
-import ClientesList from './pages/tiendita/ClientesList.jsx'
+import VentasList    from './pages/tiendita/VentasList.jsx'
+import ClientesList  from './pages/tiendita/ClientesList.jsx'
+import ApartadosList from './pages/tiendita/ApartadosList.jsx'
 // Rifas
 import Dashboard from './pages/Dashboard.jsx'
 import Opciones from './pages/Opciones.jsx'
@@ -39,6 +40,7 @@ function AppShell() {
           <Route path="/pedidos"   element={<ProtectedRoute><PedidosList /></ProtectedRoute>} />
           <Route path="/ventas"    element={<ProtectedRoute><VentasList /></ProtectedRoute>} />
           <Route path="/clientes"  element={<ProtectedRoute><ClientesList /></ProtectedRoute>} />
+          <Route path="/apartados" element={<ProtectedRoute><ApartadosList /></ProtectedRoute>} />
 
           {/* ── Rifas (módulo secundario) ── */}
           <Route path="/rifas/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

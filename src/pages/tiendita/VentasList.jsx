@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import {
   ShoppingBag, Plus, Pencil, Trash2, ChevronDown, Package,
-  CheckCircle, Clock, AlertTriangle, Wallet,
+  CheckCircle, Clock, AlertTriangle, Wallet, X, Search,
 } from 'lucide-react'
-import { useQuery }       from '../../lib/useQuery.js'
-import { useToast }       from '../../lib/toast.jsx'
+import { useQuery }         from '../../lib/useQuery.js'
+import { useToast }         from '../../lib/toast.jsx'
 import { fmt, fmtDate, today } from '../../lib/formatters.js'
-import * as q             from '../../lib/tiendita-queries.js'
-import Breadcrumbs        from '../../components/Breadcrumbs.jsx'
+import * as q               from '../../lib/tiendita-queries.js'
+import { buscarParticipantes } from '../../lib/rifas-queries.js'
+import Breadcrumbs          from '../../components/Breadcrumbs.jsx'
 import { useBreadcrumbs } from '../../lib/useBreadcrumbs.js'
 import { useAuth }        from '../../lib/AuthContext.jsx'
 import LoadingSpinner, { ErrorMsg } from '../../components/LoadingSpinner.jsx'
@@ -28,6 +29,93 @@ const EMPTY_ITEM = { producto_id: '', cantidad: 1, precio_unitario_acordado: 0 }
 const selectStyle = {
   height: '2.2rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)',
   background: 'var(--bg)', color: 'var(--text)', padding: '0 .75rem', fontSize: '.875rem',
+}
+
+// ── ClienteSearch: buscador con autocomplete ────────────────────────────────
+function ClienteSearch({ displayName, participanteId, onChange }) {
+  const [query,   setQuery]   = useState(displayName ?? '')
+  const [results, setResults] = useState([])
+  const [open,    setOpen]    = useState(false)
+  const timerRef = useRef(null)
+  const wrapRef  = useRef(null)
+
+  useEffect(() => { setQuery(displayName ?? '') }, [displayName])
+
+  useEffect(() => {
+    function onOut(e) { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', onOut)
+    return () => document.removeEventListener('mousedown', onOut)
+  }, [])
+
+  const doSearch = useCallback(async (q) => {
+    if (q.trim().length < 2) { setResults([]); setOpen(false); return }
+    try {
+      const r = await buscarParticipantes(q)
+      setResults(r ?? [])
+      setOpen((r ?? []).length > 0)
+    } catch (e) { console.error(e) }
+  }, [])
+
+  function handleChange(e) {
+    const q = e.target.value
+    setQuery(q)
+    onChange({ participante_id: '', nombre_cliente: q })
+    clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => doSearch(q), 300)
+  }
+
+  function handleSelect(r) {
+    setQuery(r.nombre_completo)
+    setResults([]); setOpen(false)
+    onChange({ participante_id: r.id, nombre_cliente: r.nombre_completo })
+  }
+
+  function handleClear() {
+    setQuery(''); setResults([]); setOpen(false)
+    onChange({ participante_id: '', nombre_cliente: '' })
+  }
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
+        <Search size={13} style={{ position: 'absolute', left: '.6rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+        <input
+          value={query}
+          onChange={handleChange}
+          placeholder="Buscar cliente o escribir nombre…"
+          autoComplete="off"
+          style={{ paddingLeft: '1.75rem', paddingRight: query ? '1.75rem' : undefined }}
+        />
+        {query && (
+          <button type="button" onClick={handleClear} style={{ position: 'absolute', right: '.45rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', padding: 0 }}>
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      {participanteId && (
+        <div style={{ fontSize: '.75rem', color: 'var(--accent)', marginTop: '.2rem', display: 'flex', alignItems: 'center', gap: '.25rem' }}>
+          <CheckCircle size={11} /> Cliente registrado vinculado
+        </div>
+      )}
+      {open && results.length > 0 && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: '0 4px 16px rgba(0,0,0,.15)', zIndex: 400, overflow: 'hidden', marginTop: '.2rem', maxHeight: '180px', overflowY: 'auto' }}>
+          {results.map(r => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => handleSelect(r)}
+              style={{ display: 'flex', flexDirection: 'column', gap: '.1rem', width: '100%', padding: '.5rem .75rem', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-muted)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <span style={{ fontWeight: 600, fontSize: '.88rem' }}>{r.nombre_completo}</span>
+              {r.telefono_whatsapp && <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{r.telefono_whatsapp}</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 // ── Badges ───────────────────────────────────────────────────────────────────
@@ -484,28 +572,14 @@ export default function VentasList() {
             {/* Cliente */}
             <div className="field">
               <label>Cliente</label>
-              <select
-                value={headerForm.participante_id}
-                onChange={e => {
-                  const cl = (clientes ?? []).find(c => c.id === e.target.value)
-                  setHeaderForm(f => ({ ...f, participante_id: e.target.value, nombre_cliente: cl?.nombre_completo ?? '' }))
-                }}
-              >
-                <option value="">— Sin cliente registrado —</option>
-                {(clientes ?? []).map(c => <option key={c.id} value={c.id}>{c.nombre_completo}</option>)}
-              </select>
+              <ClienteSearch
+                displayName={headerForm.nombre_cliente}
+                participanteId={headerForm.participante_id}
+                onChange={({ participante_id, nombre_cliente }) =>
+                  setHeaderForm(f => ({ ...f, participante_id, nombre_cliente }))
+                }
+              />
             </div>
-            {!headerForm.participante_id && (
-              <div className="field">
-                <label>Nombre del cliente</label>
-                <input
-                  value={headerForm.nombre_cliente}
-                  onChange={e => setH('nombre_cliente', e.target.value)}
-                  placeholder="Opcional"
-                  autoFocus={drawer.mode === 'create'}
-                />
-              </div>
-            )}
 
             {/* Tipo + Fecha */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>

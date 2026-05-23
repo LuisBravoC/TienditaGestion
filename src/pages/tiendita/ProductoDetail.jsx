@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import {
   Package, Pencil, Trash2, ExternalLink, ArrowLeft, Plus,
   ChevronDown, ShoppingCart, TrendingDown, TrendingUp, BarChart3,
+  CheckCircle, Clock, Users,
 } from 'lucide-react'
 import { useQuery } from '../../lib/useQuery.js'
 import { useToast } from '../../lib/toast.jsx'
@@ -32,15 +33,17 @@ function StatCard({ label, value, color }) {
 export default function ProductoDetail() {
   const { productoId } = useParams()
   const navigate       = useNavigate()
-  const crumbs         = useBreadcrumbs({ productoId: 'Producto' })
   const { isAdmin }    = useAuth()
   const toast          = useToast()
 
   const { data: producto, loading, error, refetch }  = useQuery(() => q.getProducto(productoId), [productoId])
+  const crumbs         = useBreadcrumbs({ productoId: producto?.nombre ?? 'Producto' })
   const { data: categorias }                         = useQuery(() => q.getCategorias(), [])
   const { data: movimientos, refetch: refetchMov }   = useQuery(() => q.getMovimientosStock(productoId), [productoId])
+  const { data: ventasProd }                         = useQuery(() => q.getVentasDeProducto(productoId), [productoId])
 
   const [movOpen,    setMovOpen]    = useState(true)
+  const [ventasOpen, setVentasOpen] = useState(true)
   const [ajuDrawer,  setAjuDrawer]  = useState(false)
   const [ajuForm,    setAjuForm]    = useState({ tipo: '+', cantidad: '', motivo: 'otro', notas: '' })
   const [ajuSaving,  setAjuSaving]  = useState(false)
@@ -240,6 +243,50 @@ export default function ProductoDetail() {
                     </div>
                     <span style={{ fontWeight: 800, fontSize: '.95rem', color, flexShrink: 0 }}>
                       {isPositivo ? '+' : ''}{m.cantidad}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Historial de ventas */}
+        <div className="card" style={{ overflow: 'hidden', marginTop: '1rem' }}>
+          <div style={{ padding: '.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border)' }}>
+            <button
+              onClick={() => setVentasOpen(o => !o)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '.4rem', color: 'var(--text)', fontWeight: 700, fontSize: '.9rem', padding: 0 }}
+            >
+              <Users size={16} />
+              Ventas de este producto
+              {(ventasProd ?? []).length > 0 && (
+                <span style={{ background: 'var(--accent-light)', color: 'var(--accent)', borderRadius: '999px', padding: '.05rem .45rem', fontSize: '.72rem', fontWeight: 700 }}>
+                  {ventasProd.length}
+                </span>
+              )}
+              <ChevronDown size={14} style={{ transform: ventasOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
+            </button>
+          </div>
+          {ventasOpen && (
+            <div>
+              {(ventasProd ?? []).length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>Sin ventas registradas aún.</div>
+              ) : (ventasProd ?? []).map((item, i) => {
+                const cliente    = item.ventas?.participantes?.nombre_completo ?? item.ventas?.nombre_cliente ?? 'Sin nombre'
+                const total      = Number(item.cantidad) * Number(item.precio_unitario_acordado)
+                const entregado  = item.ventas?.estado_entrega === 'entregado'
+                return (
+                  <div key={item.venta_id + '-' + i} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.6rem 1rem', borderBottom: i < (ventasProd.length - 1) ? '1px solid var(--border)' : 'none', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 120 }}>
+                      <div style={{ fontWeight: 600, fontSize: '.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cliente}</div>
+                      <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{fmtDate(item.ventas?.fecha_venta)}</div>
+                    </div>
+                    <span style={{ fontSize: '.82rem', color: 'var(--text-muted)', flexShrink: 0 }}>{item.cantidad} ud{item.cantidad !== 1 ? 's' : ''}</span>
+                    <span style={{ fontWeight: 700, fontSize: '.85rem', color: 'var(--liquidado)', flexShrink: 0 }}>{fmt(total)}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', padding: '.1rem .4rem', borderRadius: '999px', fontSize: '.7rem', fontWeight: 700, background: entregado ? '#10b98122' : '#f59e0b22', color: entregado ? '#10b981' : '#f59e0b', flexShrink: 0 }}>
+                      {entregado ? <CheckCircle size={10} /> : <Clock size={10} />}
+                      {entregado ? 'Entregado' : 'Pendiente'}
                     </span>
                   </div>
                 )

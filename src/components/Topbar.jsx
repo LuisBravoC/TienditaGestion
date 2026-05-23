@@ -2,7 +2,7 @@ import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   Store, Search, X, Settings, LogOut, Menu,
   Users, CreditCard, AlertCircle, ClipboardList, Ticket,
-  Package, ShoppingCart, ShoppingBag, UserCheck, LayoutDashboard, ChevronDown,
+  Package, ShoppingCart, ShoppingBag, UserCheck, LayoutDashboard, ChevronDown, Clock,
 } from 'lucide-react'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { buscarParticipantes } from '../lib/rifas-queries.js'
@@ -128,6 +128,9 @@ export default function Topbar() {
           </NavLink>
           <NavLink to="/ventas" className={navCls}>
             <ShoppingBag size={15} /> <span className="nav-label">Ventas</span>
+          </NavLink>
+          <NavLink to="/apartados" className={navCls}>
+            <Clock size={15} /> <span className="nav-label">Apartados</span>
           </NavLink>
           <NavLink to="/clientes" className={navCls}>
             <UserCheck size={15} /> <span className="nav-label">Clientes</span>

@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UserCheck, Plus, Pencil, Trash2, Phone, Mail, MapPin,
-  ArrowRight, ShoppingBag, LayoutGrid, List as ListIcon,
+  ArrowRight, ShoppingBag, LayoutGrid, List as ListIcon, AlertCircle,
 } from 'lucide-react'
 import { useQuery }       from '../../lib/useQuery.js'
 import { useToast }       from '../../lib/toast.jsx'
@@ -29,21 +29,21 @@ function ventasStats(c) {
 const AVATAR_COLORS = ['#6366f1','#8b5cf6','#ec4899','#f97316','#14b8a6','#3b82f6','#10b981','#f59e0b']
 const avatarColor = name => AVATAR_COLORS[(name ?? '?').charCodeAt(0) % AVATAR_COLORS.length]
 
-function ClienteCard({ cliente, onEdit, onDelete, onClick }) {
+function ClienteCard({ cliente, tieneDeuda, onEdit, onDelete, onClick }) {
   const stats   = ventasStats(cliente)
   const inicial = (cliente.nombre_completo ?? '?')[0].toUpperCase()
 
   return (
     <div className="card" onClick={onClick} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', gap: 0 }}>
       {/* Cuerpo */}
-      <div style={{ padding: '1rem', display: 'flex', gap: '.85rem', alignItems: 'flex-start' }}>
+      <div style={{ padding: '1.1rem 1.1rem .9rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
         {/* Avatar */}
-        <div style={{ width: 40, height: 40, borderRadius: '50%', background: avatarColor(cliente.nombre_completo), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1rem', color: '#fff', flexShrink: 0 }}>
+        <div style={{ width: 46, height: 46, borderRadius: '50%', background: avatarColor(cliente.nombre_completo), display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '1.15rem', color: '#fff', flexShrink: 0 }}>
           {inicial}
         </div>
         {/* Info */}
-        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
-          <div style={{ fontWeight: 700, fontSize: '.95rem', lineHeight: 1.3 }}>
+        <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '.32rem' }}>
+          <div style={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.25 }}>
             {cliente.nombre_completo}
           </div>
           {cliente.telefono_whatsapp && (
@@ -59,23 +59,28 @@ function ClienteCard({ cliente, onEdit, onDelete, onClick }) {
           )}
           {cliente.direccion && (
             <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'flex-start', gap: '.35rem' }}>
-              <MapPin size={12} style={{ flexShrink: 0, marginTop: '.1rem' }} />
-              <span style={{ lineHeight: 1.4 }}>{cliente.direccion}</span>
+              <MapPin size={12} style={{ flexShrink: 0, marginTop: '.15rem' }} />
+              <span style={{ lineHeight: 1.45 }}>{cliente.direccion}</span>
             </div>
           )}
         </div>
       </div>
 
       {/* Footer: stats + acciones */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '.6rem 1rem', display: 'flex', alignItems: 'center', gap: '.6rem', background: 'var(--bg-muted)' }}>
+      <div style={{ borderTop: '1px solid var(--border)', padding: '.6rem 1.1rem', display: 'flex', alignItems: 'center', gap: '.55rem', background: 'var(--bg-muted)', flexWrap: 'wrap' }}>
         {stats.count > 0 ? (
           <>
             <ShoppingBag size={13} style={{ color: 'var(--accent)', flexShrink: 0 }} />
             <span style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>
               <strong style={{ color: 'var(--text)' }}>{stats.count}</strong> venta{stats.count !== 1 ? 's' : ''}
             </span>
-            <span style={{ opacity: .35, fontSize: '.8rem' }}>·</span>
-            <span style={{ fontSize: '.8rem', fontWeight: 700, color: 'var(--liquidado)' }}>{fmt(stats.total)}</span>
+            <span style={{ opacity: .3, fontSize: '.8rem' }}>·</span>
+            <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--liquidado)' }}>{fmt(stats.total)}</span>
+            {tieneDeuda && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.2rem', padding: '.1rem .45rem', borderRadius: '999px', fontSize: '.7rem', fontWeight: 700, background: '#ef444420', color: '#ef4444' }}>
+                <AlertCircle size={10} /> Deuda
+              </span>
+            )}
           </>
         ) : (
           <span style={{ fontSize: '.78rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>Sin compras</span>
@@ -83,7 +88,7 @@ function ClienteCard({ cliente, onEdit, onDelete, onClick }) {
         <div style={{ flex: 1 }} />
         {onEdit   && <button className="btn btn-icon" onClick={e => { e.stopPropagation(); onEdit(cliente, e) }}   title="Editar"><Pencil size={13} /></button>}
         {onDelete && <button className="btn btn-icon btn-danger-icon" onClick={e => { e.stopPropagation(); onDelete(cliente.id) }} title="Eliminar"><Trash2 size={13} /></button>}
-        <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
+        <ArrowRight size={14} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
       </div>
     </div>
   )
@@ -121,10 +126,12 @@ export default function ClientesList() {
   const toast       = useToast()
 
   const { data, loading, error, refetch } = useQuery(() => qt.getClientesConResumen(), [])
+  const { data: apartados }               = useQuery(() => qt.getApartadosPendientes(), [])
 
-  const [search,       setSearch]       = useState('')
-  const [soloConCompras, setSoloConCompras] = useState(false)
-  const [viewMode,     setViewMode]     = useState('cards')
+  const [search,         setSearch]         = useState('')
+  const [soloConCompras, setSoloConCompras]   = useState(false)
+  const [soloConDeuda,   setSoloConDeuda]     = useState(false)
+  const [viewMode,       setViewMode]         = useState('cards')
   const [drawer,       setDrawer]       = useState(null)
   const [form,         setForm]         = useState(EMPTY)
   const [saving,       setSaving]       = useState(false)
@@ -178,9 +185,15 @@ export default function ClientesList() {
     finally { setSaving(false) }
   }
 
+  const clientesConDeuda = useMemo(
+    () => new Set((apartados ?? []).map(a => a.participante_id).filter(Boolean)),
+    [apartados]
+  )
+
   const list = useMemo(() => {
     return (data ?? []).filter(c => {
-      if (soloConCompras && !(c.ventas?.length > 0)) return false
+      if (soloConCompras && !(c.ventas?.length > 0))  return false
+      if (soloConDeuda   && !clientesConDeuda.has(c.id)) return false
       if (!search.trim()) return true
       const s = search.toLowerCase()
       return (
@@ -190,9 +203,10 @@ export default function ClientesList() {
         (c.direccion ?? '').toLowerCase().includes(s)
       )
     })
-  }, [data, search, soloConCompras])
+  }, [data, search, soloConCompras, soloConDeuda, clientesConDeuda])
 
   const totalConCompras = useMemo(() => (data ?? []).filter(c => c.ventas?.length > 0).length, [data])
+  const totalConDeuda   = clientesConDeuda.size
 
   if (loading) return <><Breadcrumbs crumbs={crumbs} /><LoadingSpinner text="Cargando clientes…" /></>
   if (error)   return <ErrorMsg message={error} />
@@ -220,15 +234,20 @@ export default function ClientesList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', cursor: 'pointer', flexShrink: 0, color: soloConCompras ? 'var(--accent)' : 'var(--text-muted)' }}>
-            <input
-              type="checkbox"
-              checked={soloConCompras}
-              onChange={e => setSoloConCompras(e.target.checked)}
-              style={{ width: 'auto', accentColor: 'var(--accent)' }}
-            />
-            Con compras ({totalConCompras})
-          </label>
+          <button
+            className={`btn btn-sm ${soloConCompras ? 'btn-primary' : 'btn-outline'}`}
+            onClick={() => setSoloConCompras(c => !c)}
+            style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flexShrink: 0 }}
+          >
+            <ShoppingBag size={13} /> Con compras ({totalConCompras})
+          </button>
+          <button
+            className={`btn btn-sm ${soloConDeuda ? '' : 'btn-outline'}`}
+            onClick={() => setSoloConDeuda(c => !c)}
+            style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flexShrink: 0, ...(soloConDeuda ? { background: '#ef444420', color: '#ef4444', border: '1px solid #ef444440' } : {}) }}
+          >
+            <AlertCircle size={13} /> Con deuda ({totalConDeuda})
+          </button>
         </div>
 
         {search.trim() && (
@@ -239,11 +258,12 @@ export default function ClientesList() {
 
         {/* Vista tarjetas */}
         {viewMode === 'cards' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
             {list.map(c => (
               <ClienteCard
                 key={c.id}
                 cliente={c}
+                tieneDeuda={clientesConDeuda.has(c.id)}
                 onEdit={isAdmin ? openEdit : null}
                 onDelete={isAdmin ? id => setConfirm(id) : null}
                 onClick={() => navigate(`/participantes/${c.id}`)}
