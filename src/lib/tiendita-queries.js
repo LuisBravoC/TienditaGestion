@@ -399,6 +399,67 @@ export async function getClientesConResumen() {
 // DASHBOARD — métricas de resumen para la pantalla de inicio
 // ════════════════════════════════════════════════════════════════════════════════
 
+/** Datos para las gráficas del dashboard (mes actual + top productos) */
+export async function getDashboardCharts() {
+  const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10)
+
+  const [ventasRes, itemsRes] = await Promise.all([
+    supabase.from('ventas').select('fecha_venta, precio_total, metodo_pago').gte('fecha_venta', inicioMes),
+    supabase.from('venta_items').select('cantidad, productos(nombre)'),
+  ])
+  check(ventasRes, 'charts:ventas')
+  check(itemsRes,  'charts:items')
+
+  const ventas = ventasRes.data ?? []
+  const items  = itemsRes.data  ?? []
+
+  // Ventas por día del mes
+  const diaMap = {}
+  ventas.forEach(v => {
+    const d = v.fecha_venta.slice(8, 10) // DD
+    diaMap[d] = (diaMap[d] ?? 0) + Number(v.precio_total)
+  })
+  const ventasDia = Object.entries(diaMap)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([dia, total]) => ({ dia, total }))
+
+  // Método de pago
+  const metodosMap = {}
+  ventas.forEach(v => {
+    const m = v.metodo_pago ?? 'Otro'
+    metodosMap[m] = (metodosMap[m] ?? 0) + Number(v.precio_total)
+  })
+  const metodoPago = Object.entries(metodosMap)
+    .sort(([, a], [, b]) => b - a)
+    .map(([metodo, total]) => ({ metodo, total }))
+
+  // Top 5 productos por unidades vendidas
+  const prodMap = {}
+  items.forEach(it => {
+    const n = it.productos?.nombre ?? 'Desconocido'
+    prodMap[n] = (prodMap[n] ?? 0) + Number(it.cantidad)
+  })
+  const topProductos = Object.entries(prodMap)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+
+  return { ventasDia, metodoPago, topProductos }
+}
+
+/** Últimas N ventas para preview rápido en el dashboard */
+export async function getVentasRecientes(limit = 5) {
+  return check(
+    await supabase
+      .from('vista_ventas_completa')
+      .select('id, nombre_cliente, precio_total, saldo_pendiente, estado_entrega, tipo, fecha_venta')
+      .order('fecha_venta', { ascending: false })
+      .order('id',          { ascending: false })
+      .limit(limit),
+    'getVentasRecientes'
+  )
+}
+
 export async function getDashboardTiendita() {
   const [ventasMes, apartados, stockBajo, pedidosTransito] = await Promise.all([
     // Total vendido en el mes actual
