@@ -460,11 +460,13 @@ export default function PedidosList() {
         {/* Modal marcar recibido */}
         {recibirConfirm && (
           <ConfirmModal
-            title="Marcar como recibido"
             message={`¿Confirmas que recibiste el pedido de ${recibirConfirm.proveedor || recibirConfirm.plataforma}? El stock de los productos se actualizará automáticamente.`}
             onConfirm={handleMarcarRecibido}
             onCancel={() => setRecibirConfirm(null)}
             loading={saving}
+            confirmLabel="Confirmar"
+            loadingLabel="Guardando…"
+            confirmClassName="btn-primary"
           />
         )}
 
@@ -474,6 +476,9 @@ export default function PedidosList() {
             message="¿Eliminar este pedido y todos sus productos? Esta acción no se puede deshacer."
             onConfirm={handleDelete}
             onCancel={() => setConfirm(null)}
+            confirmLabel="Eliminar"
+            loadingLabel="Eliminando…"
+            confirmClassName="btn-danger"
           />
         )}
         {errModal && <ErrorModal title={errModal.title} message={errModal.body} onClose={() => setErrModal(null)} />}

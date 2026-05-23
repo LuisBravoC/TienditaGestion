@@ -318,6 +318,36 @@ export async function deleteVenta(id) {
   )
 }
 
+export async function getItemsDeVenta(ventaId) {
+  return check(
+    await supabase
+      .from('venta_items')
+      .select('*, productos(nombre, precio_venta)')
+      .eq('venta_id', ventaId)
+      .order('created_at'),
+    'getItemsDeVenta'
+  )
+}
+
+export async function updateVentaConItems(id, ventaPayload, items) {
+  check(
+    await supabase.from('ventas').update(ventaPayload).eq('id', id),
+    'updateVentaConItems:header'
+  )
+  check(
+    await supabase.from('venta_items').delete().eq('venta_id', id),
+    'updateVentaConItems:delete'
+  )
+  if (items?.length) {
+    check(
+      await supabase.from('venta_items').insert(
+        items.map(i => ({ ...i, venta_id: id }))
+      ),
+      'updateVentaConItems:items'
+    )
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════════════════
 // ABONOS DE VENTA (apartados)
 // ════════════════════════════════════════════════════════════════════════════════
