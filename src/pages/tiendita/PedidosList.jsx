@@ -53,7 +53,10 @@ function ItemRow({ item, idx, productos, onChange, onRemove }) {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 90px auto', gap: '.4rem', alignItems: 'center', marginBottom: '.4rem' }}>
       <select
         value={item.producto_id}
-        onChange={e => onChange(idx, 'producto_id', e.target.value)}
+        onChange={e => {
+          const prod = (productos ?? []).find(p => p.id === e.target.value)
+          onChange(idx, { producto_id: e.target.value, costo_unitario_base: prod?.precio_costo ?? 0 })
+        }}
         style={{ height: '2.1rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', padding: '0 .5rem', fontSize: '.82rem' }}
       >
         <option value="">— Producto —</option>
@@ -106,7 +109,11 @@ export default function PedidosList() {
   // ── item helpers ──
   function addItem()             { setItems(its => [...its, { ...EMPTY_ITEM }]) }
   function removeItem(i)         { setItems(its => its.filter((_, idx) => idx !== i)) }
-  function changeItem(i, k, v)   { setItems(its => its.map((it, idx) => idx === i ? { ...it, [k]: v } : it)) }
+  function changeItem(i, kOrObj, v) {
+    setItems(its => its.map((it, idx) =>
+      idx === i ? { ...it, ...(typeof kOrObj === 'object' ? kOrObj : { [kOrObj]: v }) } : it
+    ))
+  }
 
   // ── calcular resumen del envío prorrateado ──
   const resumen = useMemo(() => {
