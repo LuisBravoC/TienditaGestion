@@ -222,8 +222,8 @@ export default function ProductoDetail() {
             )}
           </div>
 
-          {movOpen && (
-            <div>
+          <div className={`chart-collapse${movOpen ? ' open' : ''}`}>
+            <div className="chart-collapse-inner">
               {(movimientos ?? []).length === 0 ? (
                 <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>
                   Sin movimientos registrados aún.
@@ -248,7 +248,7 @@ export default function ProductoDetail() {
                 )
               })}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Historial de ventas */}
@@ -268,8 +268,8 @@ export default function ProductoDetail() {
               <ChevronDown size={14} style={{ transform: ventasOpen ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }} />
             </button>
           </div>
-          {ventasOpen && (
-            <div>
+          <div className={`chart-collapse${ventasOpen ? ' open' : ''}`}>
+            <div className="chart-collapse-inner">
               {(ventasProd ?? []).length === 0 ? (
                 <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.85rem' }}>Sin ventas registradas aún.</div>
               ) : (ventasProd ?? []).map((item, i) => {
@@ -292,7 +292,7 @@ export default function ProductoDetail() {
                 )
               })}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Drawer ajuste */}

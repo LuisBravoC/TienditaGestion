@@ -434,13 +434,13 @@ export default function VentasList() {
             )}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+          <div key={tipoFiltro + '|' + entregaFiltro} style={{ display: 'flex', flexDirection: 'column', gap: '.75rem', animation: 'fadeIn .2s ease' }}>
             {list.map(venta => {
               const isExpanded = expanded === venta.id
               const exp  = expandedData[venta.id]
               const saldo = Number(venta.saldo_pendiente ?? 0)
               return (
-                <div key={venta.id} className="card" style={{ overflow: 'hidden' }}>
+                <div key={venta.id} className="card" style={{ overflow: 'hidden', animation: 'fadeIn .18s ease' }}>
 
                   {/* Cabecera */}
                   <div style={{ padding: '.9rem 1rem', display: 'flex', gap: '.75rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -505,7 +505,8 @@ export default function VentasList() {
                   </div>
 
                   {/* Vista expandida */}
-                  {isExpanded && (
+                  <div className={`chart-collapse${isExpanded ? ' open' : ''}`}>
+                    <div className="chart-collapse-inner">
                     <div style={{ borderTop: '1px solid var(--border)' }}>
                       {exp?.loading ? (
                         <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.82rem' }}>Cargando…</div>
@@ -554,7 +555,8 @@ export default function VentasList() {
                         </>
                       )}
                     </div>
-                  )}
+                    </div>
+                  </div>
                 </div>
               )
             })}

@@ -603,6 +603,7 @@ tbody tr:last-child { border-bottom: none; }
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+.fade-in { animation: fadeIn .18s ease both; }
 .drawer-header {
   display: flex;
   align-items: center;

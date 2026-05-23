@@ -97,7 +97,7 @@ function ClienteCard({ cliente, tieneDeuda, onEdit, onDelete, onClick }) {
 function ClienteRow({ cliente, onEdit, onDelete, onClick }) {
   const stats = ventasStats(cliente)
   return (
-    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.65rem 1rem', borderBottom: '1px solid var(--border)', cursor: 'pointer' }}>
+    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.65rem 1rem', borderBottom: '1px solid var(--border)', cursor: 'pointer', animation: 'fadeIn .18s ease' }}>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 600, fontSize: '.9rem' }}>{cliente.nombre_completo}</div>
         {(cliente.telefono_whatsapp || cliente.email) && (
@@ -256,6 +256,7 @@ export default function ClientesList() {
           </p>
         )}
 
+        <div key={viewMode + '|' + soloConCompras + '|' + soloConDeuda} style={{ animation: 'fadeIn .2s ease' }}>
         {/* Vista tarjetas */}
         {viewMode === 'cards' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
@@ -299,6 +300,7 @@ export default function ClientesList() {
             ))}
           </div>
         )}
+        </div>
 
         {/* Drawer crear/editar */}
         {drawer && (

@@ -565,7 +565,8 @@ function VentaCompraRow({ venta: v }) {
       </button>
 
       {/* Sección expandida */}
-      {open && (
+      <div className={`chart-collapse${open ? ' open' : ''}`}>
+        <div className="chart-collapse-inner">
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: '.5rem', display: 'flex', flexDirection: 'column', gap: 0 }}>
           {exp?.loading ? (
             <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.25rem 0' }}>Cargando…</div>
@@ -612,7 +613,8 @@ function VentaCompraRow({ venta: v }) {
             </>
           )}
         </div>
-      )}
+        </div>
+      </div>
     </div>
   )
 }

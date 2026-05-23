@@ -191,6 +191,7 @@ export default function ProductosList() {
           </p>
         )}
 
+        <div key={viewMode + '|' + catFiltro + '|' + stockFiltro} style={{ animation: 'fadeIn .2s ease' }}>
         {/* Vista cards */}
         {viewMode === 'cards' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
@@ -199,7 +200,7 @@ export default function ProductosList() {
                 key={p.id}
                 className="card"
                 onClick={() => navigate(`/productos/${p.id}`)}
-                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '.5rem' }}
+                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '.5rem', animation: 'fadeIn .18s ease' }}
               >
                 {/* Header: categoría + stock */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.4rem', minHeight: '1.5rem' }}>
@@ -280,6 +281,7 @@ export default function ProductosList() {
             ))}
           </div>
         )}
+        </div>
 
         {/* Drawer crear/editar */}
         {drawer && (

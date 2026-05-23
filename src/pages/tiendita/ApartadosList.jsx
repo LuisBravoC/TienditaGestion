@@ -106,7 +106,7 @@ export default function ApartadosList() {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem', animation: 'fadeIn .2s ease' }}>
             {list.map(a => (
               <ApartadoRow
                 key={a.id}
@@ -170,7 +170,7 @@ function ApartadoRow({ apartado: a, isAdmin, onAbono, onVerCliente }) {
   const esVencido = a.fecha_limite && new Date(a.fecha_limite) < new Date()
 
   return (
-    <div className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '.55rem' }}>
+    <div className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '.55rem', animation: 'fadeIn .18s ease' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.75rem', flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, fontSize: '.95rem', marginBottom: '.15rem' }}>

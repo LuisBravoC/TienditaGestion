@@ -276,12 +276,12 @@ export default function PedidosList() {
             )}
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+          <div key={estadoFiltro} style={{ display: 'flex', flexDirection: 'column', gap: '.75rem', animation: 'fadeIn .2s ease' }}>
             {list.map(pedido => {
               const isExpanded = expanded === pedido.id
               const totalItems = (pedido.pedido_items ?? []).reduce((s, i) => s + (i.cantidad ?? 0), 0)
               return (
-                <div key={pedido.id} className="card" style={{ overflow: 'hidden' }}>
+                <div key={pedido.id} className="card" style={{ overflow: 'hidden', animation: 'fadeIn .18s ease' }}>
                   {/* Cabecera del pedido */}
                   <div style={{ padding: '.9rem 1rem', display: 'flex', gap: '.75rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -337,28 +337,31 @@ export default function PedidosList() {
                   </div>
 
                   {/* Items expandidos */}
-                  {isExpanded && (pedido.pedido_items ?? []).length > 0 && (
-                    <div style={{ borderTop: '1px solid var(--border)' }}>
-                      {(pedido.pedido_items ?? []).map((item, i) => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.5rem 1rem', borderBottom: i < pedido.pedido_items.length - 1 ? '1px solid var(--border)' : 'none', fontSize: '.85rem' }}>
-                          <Package size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                          <span style={{ flex: 1, fontWeight: 500 }}>{item.productos?.nombre ?? 'Producto eliminado'}</span>
-                          <span style={{ color: 'var(--text-muted)' }}>×{item.cantidad}</span>
-                          {item.costo_real > 0 && (
-                            <span style={{ fontWeight: 600 }}>{fmt(item.costo_real)}/u</span>
-                          )}
-                          <span style={{ fontWeight: 700, minWidth: '70px', textAlign: 'right' }}>
-                            {fmt(item.costo_real * item.cantidad)}
-                          </span>
+                  <div className={`chart-collapse${isExpanded ? ' open' : ''}`}>
+                    <div className="chart-collapse-inner">
+                      {(pedido.pedido_items ?? []).length > 0 ? (
+                        <div style={{ borderTop: '1px solid var(--border)' }}>
+                          {(pedido.pedido_items ?? []).map((item, i) => (
+                            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.5rem 1rem', borderBottom: i < pedido.pedido_items.length - 1 ? '1px solid var(--border)' : 'none', fontSize: '.85rem' }}>
+                              <Package size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                              <span style={{ flex: 1, fontWeight: 500 }}>{item.productos?.nombre ?? 'Producto eliminado'}</span>
+                              <span style={{ color: 'var(--text-muted)' }}>×{item.cantidad}</span>
+                              {item.costo_real > 0 && (
+                                <span style={{ fontWeight: 600 }}>{fmt(item.costo_real)}/u</span>
+                              )}
+                              <span style={{ fontWeight: 700, minWidth: '70px', textAlign: 'right' }}>
+                                {fmt(item.costo_real * item.cantidad)}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      ) : (
+                        <div style={{ padding: '.75rem 1rem', fontSize: '.82rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
+                          Sin productos registrados.
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {isExpanded && (pedido.pedido_items ?? []).length === 0 && (
-                    <div style={{ padding: '.75rem 1rem', fontSize: '.82rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border)' }}>
-                      Sin productos registrados.
-                    </div>
-                  )}
+                  </div>
                 </div>
               )
             })}
