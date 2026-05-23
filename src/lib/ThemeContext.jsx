@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext(null)
 
-const THEME_STORAGE_KEY = 'RifaGestion-theme'
+const THEME_STORAGE_KEY = 'TienditaGestion-theme'
 const VALID_THEMES = ['dark', 'light', 'google']
 const DEFAULT_THEME = 'dark'
 

@@ -38,7 +38,7 @@ export default function Login() {
         <div className="login-logo">
           <img src={logo} alt="Logo" className="login-logo-img" />
         </div>
-        <h1 className="login-title">RifaGestión</h1>
+        <h1 className="login-title">TienditaGestión</h1>
         <p className="login-sub">Inicio de sesión</p>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
