@@ -1,0 +1,36 @@
+/* ── Theme: Google (Material Design v3) ────────────────────────────────────────── */
+/* Tema profesional inspirado en Material Design v3 de Google */
+/* Colores puros, sombras sutiles, espaciado generoso */
+
+html.google {
+  /* Colores base - Material Design v3 palette */
+  --bg:           #fafafa;        /* Gris muy claro, fondo limpio */
+  --bg-card:      #ffffff;        /* Blanco puro para tarjetas */
+  --bg-hover:     #f8f9fa;        /* Hover muy sutil */
+  --border:       #dadce0;        /* Gris claro para divisores */
+  --text:         #202124;        /* Gris oscuro casi negro */
+  --text-muted:   #5f6368;        /* Gris medio para texto secundario */
+  
+  /* Accent - Material Design Blue */
+  --accent:       #1f71ba;        /* Blue 700 - profesional */
+  --accent-light: #2b7de9;        /* Blue 600 - más claro */
+  
+  /* Status colors - Material Design colors */
+  --deuda:        #d32f2f;        /* Red 700 - deuda */
+  --deuda-bg:     rgba(211,47,47,.08);
+  --abonado:      #f57c00;        /* Orange 700 - pendiente */
+  --abonado-bg:   rgba(245,124,0,.08);
+  --liquidado:    #388e3c;        /* Green 700 - liquidado */
+  --liquidado-bg: rgba(56,142,60,.08);
+
+  /* Espaciado y bordes - Google style */
+  --radius:       4px;            /* Material Design radius más pequeño */
+  --shadow:       0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+  
+  /* Tipografía */
+  font-family: 'Roboto', 'Google Sans', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}

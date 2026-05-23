@@ -1,0 +1,25 @@
+{
+  "name": "rifagestion",
+  "private": true,
+  "version": "1.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && gh-pages -d dist"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.3",
+    "lucide-react": "^0.441.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "gh-pages": "^6.3.0",
+    "vite": "^5.4.8"
+  }
+}

@@ -1,0 +1,25 @@
+/* ── Theme: Light ──────────────────────────────────────────────────────────────── */
+/* Tema claro con colores suave */
+
+html.light {
+  --bg:           #ffffff;
+  --bg-card:      #f8fafc;
+  --bg-hover:     #f1f5f9;
+  --border:       #e2e8f0;
+  --text:         #1e293b;
+  --text-muted:   #64748b;
+  --accent:       #6366f1;
+  --accent-light: #818cf8;
+
+  /* Status colors */
+  --deuda:        #ef4444;
+  --deuda-bg:     rgba(239,68,68,.08);
+  --abonado:      #f59e0b;
+  --abonado-bg:   rgba(245,158,11,.08);
+  --liquidado:    #22c55e;
+  --liquidado-bg: rgba(34,197,94,.08);
+
+  --radius:  0.75rem;
+  --shadow:  0 4px 24px rgba(0,0,0,.08);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}

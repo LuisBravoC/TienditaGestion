@@ -1,0 +1,26 @@
+/* ── Theme: Dark (Default) ────────────────────────────────────────────────────── */
+/* Tema oscuro con colores indigo/púrpura */
+
+:root,
+html.dark {
+  --bg:           #0f172a;
+  --bg-card:      #1e293b;
+  --bg-hover:     #263347;
+  --border:       #334155;
+  --text:         #f1f5f9;
+  --text-muted:   #94a3b8;
+  --accent:       #6366f1;
+  --accent-light: #818cf8;
+
+  /* Status colors */
+  --deuda:        #ef4444;
+  --deuda-bg:     rgba(239,68,68,.12);
+  --abonado:      #f59e0b;
+  --abonado-bg:   rgba(245,158,11,.12);
+  --liquidado:    #22c55e;
+  --liquidado-bg: rgba(34,197,94,.12);
+
+  --radius:  0.75rem;
+  --shadow:  0 4px 24px rgba(0,0,0,.35);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
