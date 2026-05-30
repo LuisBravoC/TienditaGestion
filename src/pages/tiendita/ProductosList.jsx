@@ -216,8 +216,8 @@ export default function ProductosList() {
                 {/* Precios */}
                 {(() => {
                   const hasCosto = p.precio_costo != null
-                  const margen   = hasCosto && p.precio_venta > 0
-                    ? Math.round(((p.precio_venta - p.precio_costo) / p.precio_venta) * 100)
+                  const margen   = hasCosto && p.precio_costo > 0
+                    ? Math.round(((p.precio_venta - p.precio_costo) / p.precio_costo) * 100)
                     : null
                   return (
                     <div style={{ display: 'grid', gridTemplateColumns: hasCosto ? '1fr 1fr 1fr' : '1fr', gap: '.25rem', borderTop: '1px solid var(--border)', paddingTop: '.55rem', marginTop: '.1rem' }}>
