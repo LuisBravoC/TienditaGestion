@@ -544,7 +544,7 @@ export async function getVentasPaginado({
     .from('vista_ventas_completa')
     .select('*', { count: 'exact' })
     .order('fecha_venta', { ascending: false })
-  if (tipoFiltro)    q = q.eq('tipo_venta', tipoFiltro)
+  if (tipoFiltro)    q = q.eq('tipo', tipoFiltro)
   if (entregaFiltro) q = q.eq('estado_entrega', entregaFiltro)
   if (search.trim()) q = q.ilike('nombre_cliente', `%${search.trim()}%`)
   if (fechaDesde)    q = q.gte('fecha_venta', fechaDesde)
