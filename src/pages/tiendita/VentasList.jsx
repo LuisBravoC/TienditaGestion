@@ -466,24 +466,24 @@ export default function VentasList() {
                 <div key={venta.id} className="card" style={{ overflow: 'hidden', animation: 'fadeIn .18s ease' }}>
 
                   {/* Cabecera */}
-                  <div style={{ padding: '.9rem 1rem', display: 'flex', gap: '.75rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div style={{ padding: '.9rem 1rem', display: 'flex', gap: '.75rem', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap', marginBottom: '.25rem' }}>
-                        <TipoBadge tipo={venta.tipo} />
-                        <span style={{ fontWeight: 700, fontSize: '.95rem' }}>
-                          {venta.nombre_cliente || 'Sin nombre'}
-                        </span>
-                        <EntregaBadge estado={venta.estado_entrega} />
+                      <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '.35rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {venta.nombre_cliente || 'Sin nombre'}
                       </div>
-                      <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
-                        <span>{fmtDate(venta.fecha_venta)}</span>
-                        <span>{venta.metodo_pago}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', flexWrap: 'wrap' }}>
+                        <TipoBadge tipo={venta.tipo} />
+                        <EntregaBadge estado={venta.estado_entrega} />
+                        <span style={{ color: 'var(--border)', fontSize: '.8rem' }}>·</span>
+                        <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>{fmtDate(venta.fecha_venta)}</span>
+                        <span style={{ color: 'var(--border)', fontSize: '.8rem' }}>·</span>
+                        <span style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>{venta.metodo_pago}</span>
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontWeight: 800, fontSize: '1rem' }}>{fmt(venta.precio_total)}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{fmt(venta.precio_total)}</div>
                       {venta.tipo === 'apartado' && (
-                        <div style={{ fontSize: '.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '.2rem', color: saldo > 0 ? '#f59e0b' : '#10b981' }}>
+                        <div style={{ fontSize: '.78rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '.2rem', marginTop: '.2rem', color: saldo > 0 ? '#f59e0b' : '#10b981' }}>
                           {saldo > 0 ? <AlertTriangle size={11} /> : <CheckCircle size={11} />}
                           Saldo: {fmt(saldo)}
                         </div>
@@ -535,41 +535,43 @@ export default function VentasList() {
                         <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '.82rem' }}>Cargando…</div>
                       ) : (
                         <>
-                          {/* Items */}
+                          {/* ── Sección: Productos ── */}
+                          <div style={{ padding: '.4rem 1rem', fontSize: '.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.35rem', background: 'var(--bg)' }}>
+                            <Package size={11} /> Productos
+                          </div>
                           {(exp?.items ?? []).length === 0 ? (
                             <div style={{ padding: '.75rem 1rem', fontSize: '.82rem', color: 'var(--text-muted)' }}>Sin productos registrados.</div>
                           ) : (exp?.items ?? []).map((item, i) => (
                             <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.5rem 1rem', borderBottom: '1px solid var(--border)', fontSize: '.85rem' }}>
-                              <Package size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                               <span style={{ flex: 1, fontWeight: 500 }}>{item.productos?.nombre ?? 'Producto eliminado'}</span>
                               <span style={{ color: 'var(--text-muted)' }}>×{item.cantidad}</span>
-                              <span style={{ fontWeight: 600 }}>{fmt(item.precio_unitario_acordado)}/u</span>
+                              <span style={{ color: 'var(--text-muted)', fontSize: '.8rem' }}>{fmt(item.precio_unitario_acordado)}/u</span>
                               <span style={{ fontWeight: 700, minWidth: '70px', textAlign: 'right' }}>{fmt(item.precio_unitario_acordado * item.cantidad)}</span>
                             </div>
                           ))}
 
-                          {/* Abonos (solo apartados) */}
+                          {/* ── Sección: Historial de pagos (solo apartados) ── */}
                           {venta.tipo === 'apartado' && (
-                            <div style={{ padding: '.6rem 1rem', background: 'var(--bg-muted)', borderTop: '1px solid var(--border)' }}>
-                              <div style={{ fontSize: '.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--text-muted)', marginBottom: '.4rem' }}>
-                                Historial de pagos
+                            <div style={{ borderTop: '2px solid var(--border)', background: 'var(--bg-muted)' }}>
+                              <div style={{ padding: '.4rem 1rem', fontSize: '.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '.35rem', background: 'var(--bg)' }}>
+                                <Wallet size={11} /> Historial de pagos
                               </div>
                               {Number(venta.anticipo_pagado) > 0 && (
-                                <div style={{ display: 'flex', gap: '.5rem', fontSize: '.82rem', padding: '.25rem 0' }}>
+                                <div style={{ display: 'flex', gap: '.5rem', fontSize: '.82rem', padding: '.3rem 1rem' }}>
                                   <span style={{ flex: 1, color: 'var(--text-muted)' }}>Anticipo · {fmtDate(venta.fecha_venta)}</span>
                                   <span style={{ fontWeight: 700, color: '#10b981' }}>+{fmt(venta.anticipo_pagado)}</span>
                                 </div>
                               )}
                               {(exp?.abonos ?? []).map(a => (
-                                <div key={a.id} style={{ display: 'flex', gap: '.5rem', fontSize: '.82rem', padding: '.25rem 0', borderTop: '1px solid var(--border)' }}>
+                                <div key={a.id} style={{ display: 'flex', gap: '.5rem', fontSize: '.82rem', padding: '.3rem 1rem', borderTop: '1px solid var(--border)' }}>
                                   <span style={{ flex: 1, color: 'var(--text-muted)' }}>{a.metodo_pago} · {fmtDate(a.fecha)}{a.notas ? ` · ${a.notas}` : ''}</span>
                                   <span style={{ fontWeight: 700, color: '#10b981' }}>+{fmt(a.monto)}</span>
                                 </div>
                               ))}
                               {!(exp?.abonos ?? []).length && !Number(venta.anticipo_pagado) && (
-                                <div style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>Sin pagos registrados aún.</div>
+                                <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', padding: '.3rem 1rem' }}>Sin pagos registrados aún.</div>
                               )}
-                              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: '.35rem', marginTop: '.2rem', fontSize: '.82rem', fontWeight: 700 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', padding: '.4rem 1rem', fontSize: '.82rem', fontWeight: 700 }}>
                                 <span style={{ color: 'var(--text-muted)' }}>Saldo pendiente</span>
                                 <span style={{ color: saldo > 0 ? '#f59e0b' : '#10b981' }}>{fmt(saldo)}</span>
                               </div>
