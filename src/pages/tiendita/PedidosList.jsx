@@ -14,6 +14,8 @@ import LoadingSpinner, { ErrorMsg } from '../../components/LoadingSpinner.jsx'
 import Drawer              from '../../components/Drawer.jsx'
 import ConfirmModal        from '../../components/ConfirmModal.jsx'
 import ErrorModal          from '../../components/ErrorModal.jsx'
+import Pagination          from '../../components/Pagination.jsx'
+import { usePaginatedQuery } from '../../lib/usePaginatedQuery.js'
 import { parseError }      from '../../lib/parseError.js'
 
 // ── Constantes ───────────────────────────────────────────────────────────────
@@ -88,10 +90,18 @@ export default function PedidosList() {
   const { isAdmin } = useAuth()
   const toast      = useToast()
 
-  const { data, loading, error, refetch } = useQuery(() => q.getPedidos(), [])
-  const { data: productos }               = useQuery(() => q.getProductos(), [])
+  const { data: productos } = useQuery(() => q.getProductos(), [])
 
   const [estadoFiltro, setEstadoFiltro] = useState('')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 20
+
+  function handleEstadoChange(v) { setEstadoFiltro(v); setPage(0) }
+
+  const { data, count, loading, error, refetch } = usePaginatedQuery(
+    () => q.getPedidosPaginado({ estadoFiltro, page, pageSize: PAGE_SIZE }),
+    [estadoFiltro, page],
+  )
   const [expanded,     setExpanded]     = useState(null)
 
   const [drawer,      setDrawer]      = useState(null)
@@ -231,10 +241,8 @@ export default function PedidosList() {
     finally { setSaving(false) }
   }
 
-  // ── lista filtrada ──
-  const list = useMemo(() => {
-    return (data ?? []).filter(p => !estadoFiltro || p.estado === estadoFiltro)
-  }, [data, estadoFiltro])
+  // data ya viene filtrado del servidor
+  const list = data
 
   if (loading) return <><Breadcrumbs crumbs={crumbs} /><LoadingSpinner text="Cargando pedidos…" /></>
   if (error)   return <ErrorMsg message={error} />
@@ -249,7 +257,7 @@ export default function PedidosList() {
           <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <select
               value={estadoFiltro}
-              onChange={e => setEstadoFiltro(e.target.value)}
+              onChange={e => handleEstadoChange(e.target.value)}
               style={{ height: '2.2rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text)', padding: '0 .75rem', fontSize: '.875rem' }}
             >
               <option value="">Todos los estados</option>
@@ -485,6 +493,7 @@ export default function PedidosList() {
           />
         )}
         {errModal && <ErrorModal title={errModal.title} body={errModal.body} onClose={() => setErrModal(null)} />}
+        <Pagination page={page} pageSize={PAGE_SIZE} count={count} onPage={setPage} />
       </div>
     </>
   )

@@ -192,9 +192,9 @@ export default function ProductoDetail() {
 
         {/* Stat cards */}
         <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-          <StatCard label="Total comprado" value={`${producto.total_comprado ?? 0} uds`} />
-          <StatCard label="Stock actual"   value={`${producto.stock_actual   ?? 0} uds`} color={stockColor} />
-          <StatCard label="Total vendido"  value={`${producto.total_vendido  ?? 0} uds`} />
+          <StatCard label="Total comprado" value={`${producto.total_comprado ?? 0} pzas`} />
+          <StatCard label="Stock actual"   value={`${producto.stock_actual   ?? 0} pzas`} color={stockColor} />
+          <StatCard label="Total vendido"  value={`${producto.total_vendido  ?? 0} pzas`} />
         </div>
 
         {/* Notas */}

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   UserCheck, Plus, Pencil, Trash2, Phone, Mail, MapPin,
@@ -16,6 +16,8 @@ import LoadingSpinner, { ErrorMsg } from '../../components/LoadingSpinner.jsx'
 import Drawer             from '../../components/Drawer.jsx'
 import ConfirmModal       from '../../components/ConfirmModal.jsx'
 import ErrorModal         from '../../components/ErrorModal.jsx'
+import Pagination         from '../../components/Pagination.jsx'
+import { usePaginatedQuery } from '../../lib/usePaginatedQuery.js'
 import { parseError }     from '../../lib/parseError.js'
 
 const EMPTY = { nombre_completo: '', telefono_whatsapp: '', email: '', direccion: '', notas: '' }
@@ -125,13 +127,26 @@ export default function ClientesList() {
   const { isAdmin } = useAuth()
   const toast       = useToast()
 
-  const { data, loading, error, refetch } = useQuery(() => qt.getClientesConResumen(), [])
-  const { data: apartados }               = useQuery(() => qt.getApartadosPendientes(), [])
+  const { data: apartados } = useQuery(() => qt.getApartadosPendientes(), [])
 
   const [search,         setSearch]         = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [soloConCompras, setSoloConCompras]   = useState(false)
   const [soloConDeuda,   setSoloConDeuda]     = useState(false)
   const [viewMode,       setViewMode]         = useState('cards')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 30
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(0) }, 350)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const { data, count, loading, error, refetch } = usePaginatedQuery(
+    () => qt.getClientesPaginado({ search: debouncedSearch, page, pageSize: PAGE_SIZE }),
+    [debouncedSearch, page],
+  )
   const [drawer,       setDrawer]       = useState(null)
   const [form,         setForm]         = useState(EMPTY)
   const [saving,       setSaving]       = useState(false)
@@ -190,20 +205,14 @@ export default function ClientesList() {
     [apartados]
   )
 
+  // Los filtros booleanos filtran sobre la página cargada (el search va al servidor)
   const list = useMemo(() => {
     return (data ?? []).filter(c => {
-      if (soloConCompras && !(c.ventas?.length > 0))  return false
+      if (soloConCompras && !(c.ventas?.length > 0))     return false
       if (soloConDeuda   && !clientesConDeuda.has(c.id)) return false
-      if (!search.trim()) return true
-      const s = search.toLowerCase()
-      return (
-        c.nombre_completo.toLowerCase().includes(s) ||
-        (c.telefono_whatsapp ?? '').includes(s) ||
-        (c.email ?? '').toLowerCase().includes(s) ||
-        (c.direccion ?? '').toLowerCase().includes(s)
-      )
+      return true
     })
-  }, [data, search, soloConCompras, soloConDeuda, clientesConDeuda])
+  }, [data, soloConCompras, soloConDeuda, clientesConDeuda])
 
   const totalConCompras = useMemo(() => (data ?? []).filter(c => c.ventas?.length > 0).length, [data])
   const totalConDeuda   = clientesConDeuda.size
@@ -341,6 +350,7 @@ export default function ClientesList() {
           />
         )}
         {errModal && <ErrorModal title={errModal.title} body={errModal.body} onClose={() => setErrModal(null)} />}
+        <Pagination page={page} pageSize={PAGE_SIZE} count={count} onPage={setPage} />
       </div>
     </>
   )

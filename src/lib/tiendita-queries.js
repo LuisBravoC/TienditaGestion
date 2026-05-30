@@ -490,3 +490,81 @@ export async function getDashboardTiendita() {
     pedidosEnTransito:  (pedidosTransito.data ?? []).length,
   }
 }
+
+// ════════════════════════════════════════════════════════════════════════════════
+// QUERIES PAGINADAS — con filtros server-side y .range()
+// Devuelven { data, count } en lugar de solo data[].
+// ════════════════════════════════════════════════════════════════════════════════
+
+function checkPaged({ data, count, error }, label) {
+  if (error) {
+    console.error(`[tiendita] ${label ?? ''}`, error)
+    throw error
+  }
+  return { data: data ?? [], count: count ?? 0 }
+}
+
+/** Productos con stock — para la página ProductosList */
+export async function getProductosPaginado({
+  search = '', categoria_id = '', stockFiltro = '', page = 0, pageSize = 30,
+} = {}) {
+  let q = supabase
+    .from('vista_stock_productos')
+    .select('*', { count: 'exact' })
+    .order('nombre')
+  if (search.trim())             q = q.ilike('nombre', `%${search.trim()}%`)
+  if (categoria_id)              q = q.eq('categoria_id', categoria_id)
+  if (stockFiltro === 'ok')      q = q.gt('stock_actual', 2)
+  if (stockFiltro === 'bajo')    q = q.gt('stock_actual', 0).lte('stock_actual', 2)
+  if (stockFiltro === 'agotado') q = q.lte('stock_actual', 0)
+  q = q.range(page * pageSize, (page + 1) * pageSize - 1)
+  return checkPaged(await q, 'getProductosPaginado')
+}
+
+/** Pedidos de compra — para la página PedidosList */
+export async function getPedidosPaginado({
+  estadoFiltro = '', page = 0, pageSize = 20,
+} = {}) {
+  let q = supabase
+    .from('pedidos_compra')
+    .select('*, pedido_items(id, cantidad, costo_real, producto_id, productos(nombre))', { count: 'exact' })
+    .order('fecha_compra', { ascending: false })
+  if (estadoFiltro) q = q.eq('estado', estadoFiltro)
+  q = q.range(page * pageSize, (page + 1) * pageSize - 1)
+  return checkPaged(await q, 'getPedidosPaginado')
+}
+
+/** Ventas — para la página VentasList */
+export async function getVentasPaginado({
+  tipoFiltro = '', entregaFiltro = '', search = '', page = 0, pageSize = 25,
+} = {}) {
+  let q = supabase
+    .from('vista_ventas_completa')
+    .select('*', { count: 'exact' })
+    .order('fecha_venta', { ascending: false })
+  if (tipoFiltro)    q = q.eq('tipo_venta', tipoFiltro)
+  if (entregaFiltro) q = q.eq('estado_entrega', entregaFiltro)
+  if (search.trim()) q = q.ilike('nombre_cliente', `%${search.trim()}%`)
+  q = q.range(page * pageSize, (page + 1) * pageSize - 1)
+  return checkPaged(await q, 'getVentasPaginado')
+}
+
+/** Clientes con resumen de ventas — para la página ClientesList */
+export async function getClientesPaginado({
+  search = '', page = 0, pageSize = 30,
+} = {}) {
+  let q = supabase
+    .from('participantes')
+    .select(
+      'id, nombre_completo, telefono_whatsapp, email, direccion, notas, grupo_id, created_at, ventas(id, precio_total)',
+      { count: 'exact' },
+    )
+    .order('nombre_completo')
+  if (search.trim())
+    q = q.or(
+      `nombre_completo.ilike.%${search.trim()}%,telefono_whatsapp.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`,
+    )
+  q = q.range(page * pageSize, (page + 1) * pageSize - 1)
+  return checkPaged(await q, 'getClientesPaginado')
+}
+

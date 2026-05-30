@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Package, ArrowRight, Pencil, Trash2, Plus, LayoutGrid, List as ListIcon, AlertTriangle, PackageX } from 'lucide-react'
+import { usePaginatedQuery } from '../../lib/usePaginatedQuery.js'
 import { useQuery } from '../../lib/useQuery.js'
 import { useToast } from '../../lib/toast.jsx'
 import { fmt } from '../../lib/formatters.js'
@@ -12,6 +13,7 @@ import LoadingSpinner, { ErrorMsg } from '../../components/LoadingSpinner.jsx'
 import Drawer from '../../components/Drawer.jsx'
 import ConfirmModal from '../../components/ConfirmModal.jsx'
 import ErrorModal from '../../components/ErrorModal.jsx'
+import Pagination from '../../components/Pagination.jsx'
 import { parseError } from '../../lib/parseError.js'
 import GrupoBadge from '../../components/GrupoBadge.jsx'
 
@@ -36,7 +38,7 @@ function PriceCol({ label, value, color = 'var(--text)' }) {
 function StockBadge({ stock }) {
   const n = Number(stock ?? 0)
   const color = n <= 0 ? '#ef4444' : n <= 2 ? '#f59e0b' : '#10b981'
-  const label = n <= 0 ? 'Agotado' : `${n} uds`
+  const label = n <= 0 ? 'Agotado' : `${n} pzas`
   const icon  = n <= 0 ? <PackageX size={12} /> : n <= 2 ? <AlertTriangle size={12} /> : null
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', padding: '.2rem .6rem', borderRadius: '999px', fontSize: '.8rem', fontWeight: 700, background: color + '33', color, flexShrink: 0 }}>
@@ -52,13 +54,29 @@ export default function ProductosList() {
   const { isAdmin } = useAuth()
   const toast     = useToast()
 
-  const { data, loading, error, refetch } = useQuery(() => q.getProductos(), [])
-  const { data: categorias }              = useQuery(() => q.getCategorias(), [])
-
   const [search,      setSearch]      = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [catFiltro,   setCatFiltro]   = useState('')
   const [stockFiltro, setStockFiltro] = useState('')
   const [viewMode,    setViewMode]    = useState('cards')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 30
+
+  // Debounce search para no disparar una query por tecla
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(0) }, 350)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Reset page cuando cambian los filtros de select
+  function handleCatChange(v)   { setCatFiltro(v);   setPage(0) }
+  function handleStockChange(v) { setStockFiltro(v); setPage(0) }
+
+  const { data, count, loading, error, refetch } = usePaginatedQuery(
+    () => q.getProductosPaginado({ search: debouncedSearch, categoria_id: catFiltro, stockFiltro, page, pageSize: PAGE_SIZE }),
+    [debouncedSearch, catFiltro, stockFiltro, page],
+  )
+  const { data: categorias } = useQuery(() => q.getCategorias(), [])
   const [drawer,    setDrawer]    = useState(null)
   const [form,      setForm]      = useState(EMPTY)
   const [si,        setSiState]   = useState(SI_EMPTY)   // stock inicial
@@ -136,17 +154,8 @@ export default function ProductosList() {
     finally { setSaving(false) }
   }
 
-  const list = useMemo(() => {
-    return (data ?? []).filter(p => {
-      if (catFiltro && p.categoria_id !== catFiltro) return false
-      if (stockFiltro === 'ok')      { if (p.stock_actual <= 2)               return false }
-      if (stockFiltro === 'bajo')    { if (p.stock_actual > 2 || p.stock_actual <= 0) return false }
-      if (stockFiltro === 'agotado') { if (p.stock_actual > 0)                return false }
-      if (!search.trim()) return true
-      const s = search.toLowerCase()
-      return p.nombre.toLowerCase().includes(s) || (p.descripcion ?? '').toLowerCase().includes(s)
-    })
-  }, [data, search, catFiltro, stockFiltro])
+  // data ya viene filtrado del servidor — no necesitamos useMemo
+  const list = data
 
   if (loading) return <><Breadcrumbs crumbs={crumbs} /><LoadingSpinner text="Cargando productos…" /></>
   if (error)   return <ErrorMsg message={error} />
@@ -173,11 +182,11 @@ export default function ProductosList() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <select value={catFiltro} onChange={e => setCatFiltro(e.target.value)} style={selectStyle}>
+          <select value={catFiltro} onChange={e => handleCatChange(e.target.value)} style={selectStyle}>
             <option value="">Todas las categorías</option>
             {(categorias ?? []).map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
           </select>
-          <select value={stockFiltro} onChange={e => setStockFiltro(e.target.value)} style={selectStyle}>
+          <select value={stockFiltro} onChange={e => handleStockChange(e.target.value)} style={selectStyle}>
             <option value="">Todo el stock</option>
             <option value="ok">Stock OK (&gt;2)</option>
             <option value="bajo">Stock bajo (1–2)</option>
@@ -187,7 +196,7 @@ export default function ProductosList() {
 
         {search.trim() && (
           <p style={{ fontSize: '.82rem', color: 'var(--text-muted)', marginBottom: '.75rem' }}>
-            {list.length} {list.length === 1 ? 'resultado' : 'resultados'}
+            {count} {count === 1 ? 'resultado' : 'resultados'}
           </p>
         )}
 
@@ -373,6 +382,7 @@ export default function ProductosList() {
           />
         )}
         {errModal && <ErrorModal title={errModal.title} body={errModal.body} onClose={() => setErrModal(null)} />}
+        <Pagination page={page} pageSize={PAGE_SIZE} count={count} onPage={setPage} />
       </div>
     </>
   )

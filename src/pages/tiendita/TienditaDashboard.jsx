@@ -79,7 +79,7 @@ export default function TienditaDashboard() {
                   <Package size={14} style={{ color: 'var(--text-muted)' }} /> {p.nombre}
                 </span>
                 <span style={{ fontWeight: 600, color: p.stock_actual <= 0 ? 'var(--deuda)' : 'var(--accent)' }}>
-                  {p.stock_actual <= 0 ? 'Sin stock' : `${p.stock_actual} uds`}
+                  {p.stock_actual <= 0 ? 'Sin stock' : `${p.stock_actual} pzas`}
                 </span>
               </div>
             ))}

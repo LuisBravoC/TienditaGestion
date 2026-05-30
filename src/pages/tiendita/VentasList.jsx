@@ -15,6 +15,9 @@ import LoadingSpinner, { ErrorMsg } from '../../components/LoadingSpinner.jsx'
 import Drawer             from '../../components/Drawer.jsx'
 import ConfirmModal       from '../../components/ConfirmModal.jsx'
 import ErrorModal         from '../../components/ErrorModal.jsx'
+import Pagination         from '../../components/Pagination.jsx'
+import { TipoBadge, EntregaBadge } from '../../components/VentaBadges.jsx'
+import { usePaginatedQuery } from '../../lib/usePaginatedQuery.js'
 import { parseError }     from '../../lib/parseError.js'
 
 // ── Constantes ───────────────────────────────────────────────────────────────
@@ -98,15 +101,15 @@ function ClienteSearch({ displayName, participanteId, onChange }) {
         </div>
       )}
       {open && results.length > 0 && (
-        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: '0 4px 16px rgba(0,0,0,.15)', zIndex: 400, overflow: 'hidden', marginTop: '.2rem', maxHeight: '180px', overflowY: 'auto' }}>
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: '0 4px 16px rgba(0,0,0,.25)', zIndex: 400, overflow: 'hidden', marginTop: '.2rem', maxHeight: '180px', overflowY: 'auto' }}>
           {results.map(r => (
             <button
               key={r.id}
               type="button"
               onClick={() => handleSelect(r)}
-              style={{ display: 'flex', flexDirection: 'column', gap: '.1rem', width: '100%', padding: '.5rem .75rem', textAlign: 'left', background: 'none', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}
+              style={{ display: 'flex', flexDirection: 'column', gap: '.1rem', width: '100%', padding: '.5rem .75rem', textAlign: 'left', background: 'var(--bg-card)', border: 'none', borderBottom: '1px solid var(--border)', cursor: 'pointer', color: 'var(--text)' }}
               onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-muted)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-card)'}
             >
               <span style={{ fontWeight: 600, fontSize: '.88rem' }}>{r.nombre_completo}</span>
               {r.telefono_whatsapp && <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{r.telefono_whatsapp}</span>}
@@ -118,28 +121,7 @@ function ClienteSearch({ displayName, participanteId, onChange }) {
   )
 }
 
-// ── Badges ───────────────────────────────────────────────────────────────────
-function TipoBadge({ tipo }) {
-  const cfg = tipo === 'apartado'
-    ? { color: '#8b5cf6', bg: '#8b5cf622', label: 'Apartado' }
-    : { color: '#0ea5e9', bg: '#0ea5e922', label: 'Directa' }
-  return (
-    <span style={{ padding: '.15rem .5rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: cfg.bg, color: cfg.color, flexShrink: 0 }}>
-      {cfg.label}
-    </span>
-  )
-}
-
-function EntregaBadge({ estado }) {
-  const cfg = estado === 'entregado'
-    ? { color: '#10b981', bg: '#10b98122', Icon: CheckCircle, label: 'Entregado' }
-    : { color: '#f59e0b', bg: '#f59e0b22', Icon: Clock,       label: 'Pendiente' }
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', padding: '.15rem .5rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: cfg.bg, color: cfg.color, flexShrink: 0 }}>
-      <cfg.Icon size={11} /> {cfg.label}
-    </span>
-  )
-}
+// ── Badges — importados desde components/VentaBadges.jsx ──────────────────
 
 // ── Item row del carrito ─────────────────────────────────────────────────────
 function ItemRow({ item, idx, productos, onChange, onRemove }) {
@@ -182,14 +164,30 @@ export default function VentasList() {
   const { isAdmin } = useAuth()
   const toast       = useToast()
 
-  const { data, loading, error, refetch } = useQuery(() => q.getVentas(), [])
-  const { data: productos }               = useQuery(() => q.getProductos(), [])
-  const { data: clientes }                = useQuery(() => q.getClientes(), [])
+  const { data: productos } = useQuery(() => q.getProductos(), [])
+  const { data: clientes }  = useQuery(() => q.getClientes(), [])
 
   // Filtros
   const [tipoFiltro,    setTipoFiltro]    = useState('')
   const [entregaFiltro, setEntregaFiltro] = useState('')
   const [search,        setSearch]        = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [page, setPage] = useState(0)
+  const PAGE_SIZE = 25
+
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(0) }, 350)
+    return () => clearTimeout(t)
+  }, [search])
+
+  function handleTipoChange(v)    { setTipoFiltro(v);    setPage(0) }
+  function handleEntregaChange(v) { setEntregaFiltro(v); setPage(0) }
+
+  const { data, count, loading, error, refetch } = usePaginatedQuery(
+    () => q.getVentasPaginado({ tipoFiltro, entregaFiltro, search: debouncedSearch, page, pageSize: PAGE_SIZE }),
+    [tipoFiltro, entregaFiltro, debouncedSearch, page],
+  )
 
   // Expand lazy-load
   const [expanded,     setExpanded]     = useState(null)
@@ -374,14 +372,8 @@ export default function VentasList() {
   }
 
   // ── lista filtrada ──
-  const list = useMemo(() => {
-    return (data ?? []).filter(v => {
-      if (tipoFiltro    && v.tipo            !== tipoFiltro)    return false
-      if (entregaFiltro && v.estado_entrega  !== entregaFiltro) return false
-      if (!search.trim()) return true
-      return (v.nombre_cliente ?? '').toLowerCase().includes(search.toLowerCase())
-    })
-  }, [data, tipoFiltro, entregaFiltro, search])
+  // data ya viene filtrado del servidor
+  const list = data
 
   if (loading) return <><Breadcrumbs crumbs={crumbs} /><LoadingSpinner text="Cargando ventas…" /></>
   if (error)   return <ErrorMsg message={error} />
@@ -394,12 +386,12 @@ export default function VentasList() {
         <div className="page-title-row">
           <h1 className="page-title" style={{ margin: 0 }}><ShoppingBag size={22} /> Ventas</h1>
           <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            <select value={tipoFiltro}    onChange={e => setTipoFiltro(e.target.value)}    style={selectStyle}>
+            <select value={tipoFiltro}    onChange={e => handleTipoChange(e.target.value)}    style={selectStyle}>
               <option value="">Todos los tipos</option>
               <option value="directa">Directas</option>
               <option value="apartado">Apartados</option>
             </select>
-            <select value={entregaFiltro} onChange={e => setEntregaFiltro(e.target.value)} style={selectStyle}>
+            <select value={entregaFiltro} onChange={e => handleEntregaChange(e.target.value)} style={selectStyle}>
               <option value="">Todos los estados</option>
               <option value="pendiente">Pendiente de entrega</option>
               <option value="entregado">Entregado</option>
@@ -723,6 +715,7 @@ export default function VentasList() {
         )}
 
         {errModal && <ErrorModal title={errModal.title} body={errModal.body} onClose={() => setErrModal(null)} />}
+        <Pagination page={page} pageSize={PAGE_SIZE} count={count} onPage={setPage} />
       </div>
     </>
   )

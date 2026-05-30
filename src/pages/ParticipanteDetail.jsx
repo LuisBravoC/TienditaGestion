@@ -22,6 +22,7 @@ import ConfirmModal from '../components/ConfirmModal.jsx'
 import ErrorModal from '../components/ErrorModal.jsx'
 import { parseError } from '../lib/parseError.js'
 import StatusBadge from '../components/StatusBadge.jsx'
+import { TipoBadge, EntregaBadge } from '../components/VentaBadges.jsx'
 import GrupoBadge from '../components/GrupoBadge.jsx'
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -467,9 +468,6 @@ function VentaCompraRow({ venta: v }) {
   const pct        = total > 0 ? Math.min(100, Math.round((pagado / total) * 100)) : 100
   const esApartado = v.tipo === 'apartado'
 
-  const tipoCfg   = esApartado
-    ? { color: '#8b5cf6', bg: '#8b5cf622', label: 'Apartado' }
-    : { color: 'var(--accent)', bg: 'var(--accent-light)', label: 'Directa' }
   const entCfg    = v.estado_entrega === 'entregado'
     ? { color: '#10b981', bg: '#10b98122', label: 'Entregado', Icon: CheckCircle }
     : { color: '#f59e0b', bg: '#f59e0b22', label: 'Pendiente', Icon: Clock }
@@ -496,9 +494,7 @@ function VentaCompraRow({ venta: v }) {
     <div className="card" style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
       {/* Fila 1: tipo + fecha + total */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
-        <span style={{ padding: '.12rem .5rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: tipoCfg.bg, color: tipoCfg.color, flexShrink: 0 }}>
-          {tipoCfg.label}
-        </span>
+        <TipoBadge tipo={v.tipo} />
         <span style={{ flex: 1, fontSize: '.83rem', color: 'var(--text-muted)' }}>{fmtDate(v.fecha_venta)}</span>
         <strong style={{ fontSize: '1rem', color: saldo > 0 ? 'var(--text)' : 'var(--liquidado)' }}>{fmt(total)}</strong>
       </div>
