@@ -8,30 +8,27 @@
 
 // ── Mapa de restricciones FK → mensaje legible ───────────────────────────────
 const FK_MAP = {
-  // paquetes ← alumnos
-  alumnos_paquete_id_fkey: {
-    title: 'Paquete en uso',
-    body:  'Este paquete está asignado a uno o más alumnos. Reasigna o elimina esos alumnos antes de poder eliminar el paquete.',
+  // ── Tiendita ────────────────────────────────────────────────────────────────
+  // productos ← pedido_items (RESTRICT: no se puede borrar un producto con compras)
+  pedido_items_producto_id_fkey: {
+    title: 'Producto con pedidos registrados',
+    body:  'Este producto aparece en uno o más pedidos de compra. No se puede eliminar mientras tenga movimientos de entrada.',
   },
-  // instituciones ← proyectos
-  proyectos_institucion_id_fkey: {
-    title: 'Institución con generaciones registradas',
-    body:  'Esta institución tiene generaciones activas. Primero elimina todas sus generaciones, grupos y alumnos.',
+  // productos ← venta_items (RESTRICT: no se puede borrar un producto con ventas)
+  venta_items_producto_id_fkey: {
+    title: 'Producto con ventas registradas',
+    body:  'Este producto aparece en una o más ventas. No se puede eliminar mientras tenga historial de ventas.',
   },
-  // proyectos ← grupos
-  grupos_proyecto_id_fkey: {
-    title: 'Generación con grupos registrados',
-    body:  'Esta generación tiene grupos activos. Primero elimina todos sus grupos y alumnos.',
+  // ── Rifas ───────────────────────────────────────────────────────────────────
+  // campanas ← boletos
+  boletos_campana_id_fkey: {
+    title: 'Campaña con boletos asignados',
+    body:  'Esta campaña tiene boletos registrados. Elimina primero todos los boletos antes de eliminar la campaña.',
   },
-  // grupos ← alumnos
-  alumnos_grupo_id_fkey: {
-    title: 'Grupo con alumnos registrados',
-    body:  'Este grupo tiene alumnos registrados. Elimina o reasigna a los alumnos antes de eliminar el grupo.',
-  },
-  // alumnos ← pagos
-  pagos_alumno_id_fkey: {
-    title: 'Alumno con pagos registrados',
-    body:  'Este alumno tiene pagos en su historial. Elimina primero todos sus pagos.',
+  // rifas ← boletos
+  boletos_rifa_id_fkey: {
+    title: 'Rifa con boletos asignados',
+    body:  'Esta rifa tiene boletos registrados. Elimina primero todos los boletos.',
   },
 }
 
