@@ -293,11 +293,11 @@ export default function ProductosList() {
           >
             <div className="field">
               <label>Nombre *</label>
-              <input value={form.nombre} onChange={e => set('nombre', e.target.value)} placeholder="Nombre del producto" autoFocus />
+              <input value={form.nombre} onChange={e => set('nombre', e.target.value)} placeholder="Nombre del producto" maxLength={100} autoFocus />
             </div>
             <div className="field">
               <label>Descripción</label>
-              <textarea rows={2} value={form.descripcion} onChange={e => set('descripcion', e.target.value)} placeholder="Descripción opcional" />
+              <textarea rows={2} value={form.descripcion} onChange={e => set('descripcion', e.target.value)} placeholder="Descripción opcional" maxLength={500} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
               <div className="field">
@@ -318,11 +318,11 @@ export default function ProductosList() {
             </div>
             <div className="field">
               <label>URL de compra original</label>
-              <input value={form.url_compra_original} onChange={e => set('url_compra_original', e.target.value)} placeholder="https://…" />
+              <input value={form.url_compra_original} onChange={e => set('url_compra_original', e.target.value)} placeholder="https://…" maxLength={500} />
             </div>
             <div className="field">
               <label>Notas internas</label>
-              <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Notas visibles solo para ti" />
+              <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Notas visibles solo para ti" maxLength={300} />
             </div>
 
             {/* Stock inicial — solo al crear */}

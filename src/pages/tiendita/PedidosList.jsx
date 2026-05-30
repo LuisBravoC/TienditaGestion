@@ -391,12 +391,12 @@ export default function PedidosList() {
             </div>
             <div className="field">
               <label>Proveedor / Tienda</label>
-              <input value={headerForm.proveedor} onChange={e => setH('proveedor', e.target.value)} placeholder="Ej. Vendor oficial AliExpress" autoFocus />
+              <input value={headerForm.proveedor} onChange={e => setH('proveedor', e.target.value)} placeholder="Ej. Vendor oficial AliExpress" maxLength={100} autoFocus />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
               <div className="field">
                 <label>Número de guía</label>
-                <input value={headerForm.numero_guia} onChange={e => setH('numero_guia', e.target.value)} placeholder="LP000000000CN" />
+                <input value={headerForm.numero_guia} onChange={e => setH('numero_guia', e.target.value)} placeholder="LP000000000CN" maxLength={100} />
               </div>
               <div className="field">
                 <label>Costo de envío</label>
@@ -405,11 +405,11 @@ export default function PedidosList() {
             </div>
             <div className="field">
               <label>URL de seguimiento</label>
-              <input value={headerForm.url_seguimiento} onChange={e => setH('url_seguimiento', e.target.value)} placeholder="https://…" />
+              <input value={headerForm.url_seguimiento} onChange={e => setH('url_seguimiento', e.target.value)} placeholder="https://…" maxLength={500} />
             </div>
             <div className="field">
               <label>Notas</label>
-              <textarea rows={2} value={headerForm.notas} onChange={e => setH('notas', e.target.value)} placeholder="Comentarios opcionales del pedido" />
+              <textarea rows={2} value={headerForm.notas} onChange={e => setH('notas', e.target.value)} placeholder="Comentarios opcionales del pedido" maxLength={300} />
             </div>
 
             {/* Items */}

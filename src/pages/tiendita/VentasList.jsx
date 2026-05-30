@@ -615,7 +615,7 @@ export default function VentasList() {
 
             <div className="field">
               <label>Notas</label>
-              <textarea rows={2} value={headerForm.notas} onChange={e => setH('notas', e.target.value)} placeholder="Comentarios opcionales" />
+              <textarea rows={2} value={headerForm.notas} onChange={e => setH('notas', e.target.value)} placeholder="Comentarios opcionales" maxLength={300} />
             </div>
 
             {/* Carrito de productos */}
@@ -695,7 +695,7 @@ export default function VentasList() {
             </div>
             <div className="field">
               <label>Notas</label>
-              <textarea rows={2} value={abonoForm.notas} onChange={e => setAbo('notas', e.target.value)} placeholder="Notas opcionales" />
+              <textarea rows={2} value={abonoForm.notas} onChange={e => setAbo('notas', e.target.value)} placeholder="Notas opcionales" maxLength={300} />
             </div>
           </Drawer>
         )}

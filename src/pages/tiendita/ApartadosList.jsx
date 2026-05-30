@@ -149,7 +149,7 @@ export default function ApartadosList() {
             </div>
             <div className="field">
               <label>Notas</label>
-              <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Nota opcional del abono" />
+              <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Nota opcional del abono" maxLength={300} />
             </div>
           </Drawer>
         )}

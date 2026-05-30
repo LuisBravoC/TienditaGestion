@@ -321,7 +321,7 @@ export default function ProductoDetail() {
             </div>
             <div className="field">
               <label>Notas</label>
-              <textarea rows={2} value={ajuForm.notas} onChange={e => setAju('notas', e.target.value)} placeholder="Descripción opcional del ajuste" />
+              <textarea rows={2} value={ajuForm.notas} onChange={e => setAju('notas', e.target.value)} placeholder="Descripción opcional del ajuste" maxLength={300} />
             </div>
           </Drawer>
         )}
@@ -331,11 +331,11 @@ export default function ProductoDetail() {
           <Drawer title="Editar producto" onClose={() => setEditDrawer(false)} onSave={handleEditSave} saving={editSaving}>
             <div className="field">
               <label>Nombre *</label>
-              <input value={editForm.nombre} onChange={e => setEdi('nombre', e.target.value)} autoFocus />
+              <input value={editForm.nombre} onChange={e => setEdi('nombre', e.target.value)} maxLength={100} autoFocus />
             </div>
             <div className="field">
               <label>Descripción</label>
-              <textarea rows={2} value={editForm.descripcion} onChange={e => setEdi('descripcion', e.target.value)} placeholder="Descripción opcional" />
+              <textarea rows={2} value={editForm.descripcion} onChange={e => setEdi('descripcion', e.target.value)} placeholder="Descripción opcional" maxLength={500} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
               <div className="field">
@@ -356,11 +356,11 @@ export default function ProductoDetail() {
             </div>
             <div className="field">
               <label>URL de compra original</label>
-              <input value={editForm.url_compra_original} onChange={e => setEdi('url_compra_original', e.target.value)} placeholder="https://…" />
+              <input value={editForm.url_compra_original} onChange={e => setEdi('url_compra_original', e.target.value)} placeholder="https://…" maxLength={500} />
             </div>
             <div className="field">
               <label>Notas internas</label>
-              <textarea rows={2} value={editForm.notas} onChange={e => setEdi('notas', e.target.value)} />
+              <textarea rows={2} value={editForm.notas} onChange={e => setEdi('notas', e.target.value)} maxLength={300} />
             </div>
           </Drawer>
         )}

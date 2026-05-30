@@ -312,23 +312,23 @@ export default function ClientesList() {
           >
             <div className="field">
               <label>Nombre completo *</label>
-              <input value={form.nombre_completo} onChange={e => set('nombre_completo', e.target.value)} placeholder="Nombre del cliente" autoFocus />
+              <input value={form.nombre_completo} onChange={e => set('nombre_completo', e.target.value)} placeholder="Nombre del cliente" maxLength={100} autoFocus />
             </div>
             <div className="field">
               <label>WhatsApp / Teléfono</label>
-              <input value={form.telefono_whatsapp} onChange={e => set('telefono_whatsapp', e.target.value)} placeholder="10 dígitos" />
+              <input value={form.telefono_whatsapp} onChange={e => set('telefono_whatsapp', e.target.value)} placeholder="10 dígitos" maxLength={20} />
             </div>
             <div className="field">
               <label>Correo electrónico</label>
-              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="correo@ejemplo.com" />
+              <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="correo@ejemplo.com" maxLength={254} />
             </div>
             <div className="field">
               <label>Dirección</label>
-              <input value={form.direccion} onChange={e => set('direccion', e.target.value)} placeholder="Colonia, calle, número…" />
+              <input value={form.direccion} onChange={e => set('direccion', e.target.value)} placeholder="Colonia, calle, número…" maxLength={300} />
             </div>
             <div className="field">
               <label>Notas</label>
-              <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Notas internas del cliente" />
+              <textarea rows={2} value={form.notas} onChange={e => set('notas', e.target.value)} placeholder="Notas internas del cliente" maxLength={300} />
             </div>
           </Drawer>
         )}
