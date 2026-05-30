@@ -536,7 +536,9 @@ export async function getPedidosPaginado({
 
 /** Ventas — para la página VentasList */
 export async function getVentasPaginado({
-  tipoFiltro = '', entregaFiltro = '', search = '', page = 0, pageSize = 25,
+  tipoFiltro = '', entregaFiltro = '', search = '',
+  fechaDesde = '', fechaHasta = '',
+  page = 0, pageSize = 25,
 } = {}) {
   let q = supabase
     .from('vista_ventas_completa')
@@ -545,6 +547,8 @@ export async function getVentasPaginado({
   if (tipoFiltro)    q = q.eq('tipo_venta', tipoFiltro)
   if (entregaFiltro) q = q.eq('estado_entrega', entregaFiltro)
   if (search.trim()) q = q.ilike('nombre_cliente', `%${search.trim()}%`)
+  if (fechaDesde)    q = q.gte('fecha_venta', fechaDesde)
+  if (fechaHasta)    q = q.lte('fecha_venta', fechaHasta)
   q = q.range(page * pageSize, (page + 1) * pageSize - 1)
   return checkPaged(await q, 'getVentasPaginado')
 }

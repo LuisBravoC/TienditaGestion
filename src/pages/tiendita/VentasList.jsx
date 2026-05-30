@@ -172,6 +172,8 @@ export default function VentasList() {
   const [entregaFiltro, setEntregaFiltro] = useState('')
   const [search,        setSearch]        = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [fechaDesde,    setFechaDesde]    = useState('')
+  const [fechaHasta,    setFechaHasta]    = useState('')
   const [page, setPage] = useState(0)
   const PAGE_SIZE = 25
 
@@ -183,10 +185,12 @@ export default function VentasList() {
 
   function handleTipoChange(v)    { setTipoFiltro(v);    setPage(0) }
   function handleEntregaChange(v) { setEntregaFiltro(v); setPage(0) }
+  function handleFechaDesde(v)    { setFechaDesde(v);    setPage(0) }
+  function handleFechaHasta(v)    { setFechaHasta(v);    setPage(0) }
 
   const { data, count, loading, error, refetch } = usePaginatedQuery(
-    () => q.getVentasPaginado({ tipoFiltro, entregaFiltro, search: debouncedSearch, page, pageSize: PAGE_SIZE }),
-    [tipoFiltro, entregaFiltro, debouncedSearch, page],
+    () => q.getVentasPaginado({ tipoFiltro, entregaFiltro, search: debouncedSearch, fechaDesde, fechaHasta, page, pageSize: PAGE_SIZE }),
+    [tipoFiltro, entregaFiltro, debouncedSearch, fechaDesde, fechaHasta, page],
   )
 
   // Expand lazy-load
@@ -404,22 +408,49 @@ export default function VentasList() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input
             className="deuda-search"
-            style={{ width: '100%' }}
+            style={{ flex: '1 1 200px', minWidth: '160px' }}
             placeholder="Buscar por cliente…"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          <label style={{ display: 'flex', alignItems: 'center', gap: '.35rem', fontSize: '.83rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            Desde
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={e => handleFechaDesde(e.target.value)}
+              style={{ ...selectStyle, padding: '0 .5rem' }}
+            />
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '.35rem', fontSize: '.83rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+            Hasta
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={e => handleFechaHasta(e.target.value)}
+              style={{ ...selectStyle, padding: '0 .5rem' }}
+            />
+          </label>
+          {(fechaDesde || fechaHasta) && (
+            <button
+              type="button"
+              onClick={() => { handleFechaDesde(''); handleFechaHasta('') }}
+              style={{ height: '2.2rem', padding: '0 .6rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '.8rem', display: 'flex', alignItems: 'center', gap: '.25rem' }}
+            >
+              <X size={13} /> Fechas
+            </button>
+          )}
         </div>
 
         {/* Lista */}
         {list.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
             <ShoppingBag size={36} style={{ opacity: .25, marginBottom: '.5rem' }} />
-            <p>Sin ventas{tipoFiltro || entregaFiltro || search ? ' con esos filtros' : ' todavía'}.</p>
-            {isAdmin && !tipoFiltro && !entregaFiltro && !search && (
+            <p>Sin ventas{tipoFiltro || entregaFiltro || search || fechaDesde || fechaHasta ? ' con esos filtros' : ' todavía'}.</p>
+            {isAdmin && !tipoFiltro && !entregaFiltro && !search && !fechaDesde && !fechaHasta && (
               <button className="btn btn-primary" style={{ marginTop: '1rem' }} onClick={openCreate}>
                 <Plus size={15} /> Registrar primera venta
               </button>
