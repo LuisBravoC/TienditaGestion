@@ -1,9 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { ToastProvider } from './lib/toast.jsx'
 import { AuthProvider, useAuth } from './lib/AuthContext.jsx'
+import { SidebarProvider } from './lib/SidebarContext.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import Topbar from './components/Topbar.jsx'
+import Sidebar from './components/Sidebar.jsx'
 import Login from './pages/Login.jsx'
 import MisBoletos from './pages/MisBoletos.jsx'
 // Tiendita
@@ -31,8 +33,10 @@ function AppShell() {
   return (
     <div className="app-shell">
       {session && <Topbar />}
-      <main>
-        <Routes>
+      <div className="app-body">
+        {session && <Sidebar />}
+        <main className="app-main">
+          <Routes>
           {/* ── Tiendita (módulo principal) ── */}
           <Route path="/"          element={<ProtectedRoute><TienditaDashboard /></ProtectedRoute>} />
           <Route path="/productos" element={<ProtectedRoute><ProductosList /></ProtectedRoute>} />
@@ -58,7 +62,8 @@ function AppShell() {
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }
@@ -67,6 +72,7 @@ export default function App() {
   return (
     <ErrorBoundary>
     <AuthProvider>
+    <SidebarProvider>
     <ToastProvider>
       <Routes>
         {/* Login fuera del app-shell — página completamente independiente */}
@@ -77,6 +83,7 @@ export default function App() {
         <Route path="/*" element={<AppShell />} />
       </Routes>
     </ToastProvider>
+    </SidebarProvider>
     </AuthProvider>
     </ErrorBoundary>
   )
