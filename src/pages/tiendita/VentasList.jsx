@@ -122,7 +122,7 @@ function ClienteSearch({ displayName, participanteId, onChange }) {
 function TipoBadge({ tipo }) {
   const cfg = tipo === 'apartado'
     ? { color: '#8b5cf6', bg: '#8b5cf622', label: 'Apartado' }
-    : { color: 'var(--accent)', bg: 'var(--accent-light)', label: 'Directa' }
+    : { color: '#0ea5e9', bg: '#0ea5e922', label: 'Directa' }
   return (
     <span style={{ padding: '.15rem .5rem', borderRadius: '999px', fontSize: '.72rem', fontWeight: 700, background: cfg.bg, color: cfg.color, flexShrink: 0 }}>
       {cfg.label}
